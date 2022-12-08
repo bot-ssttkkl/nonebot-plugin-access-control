@@ -1,0 +1,22 @@
+[tool.poetry]
+name = "nonebot-plugin-rbac"
+version = "0.0.1"
+description = ""
+authors = ["ssttkkl <huang.wen.long@hotmail.com>"]
+license = "MIT"
+readme = "README.MD"
+repository = "https://github.com/ssttkkl/nonebot-plugin-rbac"
+packages = [
+    { include = "nonebot_plugin_ac_demo", from = "src" },
+]
+
+[tool.poetry.dependencies]
+python = "^3.9"
+nonebot2 = "^2.0.0rc1"
+sqlalchemy = { version = "^1.4.42", extras = ["asyncio"] }
+aiosqlite = "^0.17.0"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
