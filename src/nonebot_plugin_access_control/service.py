@@ -2,7 +2,6 @@ import re
 from abc import ABC, abstractmethod
 from typing import Optional, Dict, AsyncGenerator, Tuple, overload, Literal, Callable, Awaitable, Type, Collection
 
-import conf as conf
 import nonebot
 from nonebot import Bot, logger
 from nonebot.internal.adapter import Event
