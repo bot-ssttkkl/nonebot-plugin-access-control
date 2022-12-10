@@ -58,8 +58,8 @@ _✨ Nonebot 权限控制 ✨_
 
 | 主体                 | 含义       | 示例               | 必定存在             |
 |--------------------|----------|------------------|------------------|
-| onebot:<user_id>   | 用户ID     | onebot:12345678  | 是                |
-| onebot:g<group_id> | 群组ID     | onebot:g87654321 | 仅当消息来自群组或临时会话时存在 |
+| onebot:<user_id>   | 用户       | onebot:12345678  | 是                |
+| onebot:g<group_id> | 群组       | onebot:g87654321 | 仅当消息来自群组或临时会话时存在 |
 | onebot             | OneBot用户 | onebot           | 是                |
 | all                | 所有用户     | all              | 是                |
 
