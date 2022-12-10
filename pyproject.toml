@@ -17,6 +17,10 @@ sqlalchemy = { version = "^1.4.42", extras = ["asyncio"] }
 aiosqlite = "^0.17.0"
 
 
+[tool.poetry.group.dev.dependencies]
+nonebot-adapter-onebot = "^2.1.5"
+nonebot-adapter-kaiheila = "^0.1.0"
+
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"

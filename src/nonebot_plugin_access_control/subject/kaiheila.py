@@ -14,7 +14,7 @@ try:
         if user_id is not None:
             li.append(f"kaiheila:{user_id}")
 
-        channel_id = getattr(event, "channel_id", None)
+        channel_id = getattr(event, "group_id", None)
         if channel_id is not None:
             li.append(f"kaiheila:c{channel_id}")
 
