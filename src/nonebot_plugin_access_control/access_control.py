@@ -1,8 +1,7 @@
 from typing import Type, Dict
 
 import nonebot
-from nonebot import get_driver, logger
-from nonebot.adapters.onebot.v11 import Bot
+from nonebot import get_driver, logger, Bot
 from nonebot.exception import IgnoredException
 from nonebot.internal.adapter import Event
 from nonebot.internal.matcher import Matcher
