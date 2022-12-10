@@ -48,7 +48,7 @@ _✨ Nonebot 权限控制 ✨_
 
 当设置权限时，我们直接针对一个主体进行设置。当鉴权时，我们对用户的所有主体按规模从小到大的顺序（下文将此顺序称为优先级顺序），逐一检查是否设置了权限。一旦检查到某个主体设置了权限，就以该主体设置的权限作为该用户的权限。
 
-回到上面的例子，假设我们对主体”群组G“禁用服务，但是对主体”用户V“启用服务。则在群组G内的用户U内将无法使用服务，但是则在群组G内的用户V可以使用。
+回到上面的例子，假设我们对主体”群组G“禁用服务，但是对主体”用户V“启用服务。则用户U在群组G内将无法使用服务，但是用户V在群组G内可以使用。
 
 #### 应用
 
@@ -122,7 +122,7 @@ nonebot.load_builtin_plugins("echo")
 
 1. 创建一个名为nonebot_plugin_ac_demo的插件
 
-2. 通过create_plugin_service函数创建一个PluginServic实例（注意参数必须为插件包名）
+2. 通过create_plugin_service函数创建一个PluginService实例（注意参数必须为插件包名）
 
 ```python
 from nonebot import require
@@ -134,7 +134,7 @@ from nonebot_plugin_access_control.service import create_plugin_service
 plugin_service = create_plugin_service("nonebot_plugin_ac_demo")
 ```
 
-3. 通过PluginService.create_subservice创建SubService实例。调用`SubService.patch_matcher()`应用至Matcher
+3. 通过PluginService.create_subservice创建SubService实例。调用`Service.patch_matcher()`应用至Matcher
 
 ```python
 group1 = plugin_service.create_subservice("group1")
