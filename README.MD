@@ -190,3 +190,43 @@ async def _(matcher: Matcher):
 /ac subject onebot:g87654321 deny service nonebot_plugin_ac_demo
 /ac subject onebot:g87654321 allow service nonebot_plugin_ac_demo.c
 ```
+
+## 配置项
+
+### access_control_database_conn_url
+
+数据库连接URL，必须使用异步SQLAlchemy驱动器。
+
+默认值：`sqlite+aiosqlite:///access_control.db`
+
+### access_control_default_permission
+
+未设置权限时的默认行为
+
+可选值：`allow`, `deny`
+
+默认值：`allow`
+
+### access_control_auto_patch_enabled
+
+是否启用对未适配插件的权限控制
+
+默认值：`True`
+
+### access_control_auto_patch_ignore
+
+对指定的未适配插件将不启用权限控制
+
+默认值：`[]`
+
+## LICENSE
+
+> MIT License
+> 
+> Copyright (c) 2022 ssttkkl
+> 
+> Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+> 
+> The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+> 
+> THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
