@@ -89,6 +89,33 @@ _✨ Nonebot 权限控制 ✨_
 - `<插件名>`：对整个插件进行开关
 - `<插件名>.<子服务名>.<子服务名>.....<子服务名>`：对插件内的某个子服务进行开关（需参照下文对插件进行配置）
 
+### 示例
+
+假设bot加载了内置插件echo
+
+```python
+nonebot.load_builtin_plugins("echo")
+```
+
+执行下面的指令后，用户12345678将无法调用指令`/echo`
+
+```
+/ac subject onebot:12345678 deny service echo
+```
+
+执行下面的指令后，群组87654321的所有用户（用户12345678除外）将无法调用指令`/echo`
+
+```
+/ac subject onebot:12345678 allow service echo
+/ac subject onebot:g87654321 deny service echo
+```
+
+执行下面的指令后，所有用户将无法调用指令`/echo`
+
+```
+/ac subject all deny service echo
+```
+
 ## 插件适配
 
 完整代码：[src/nonebot_plugin_ac_demo](src/nonebot_plugin_ac_demo)
