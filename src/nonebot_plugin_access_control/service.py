@@ -2,12 +2,12 @@ import re
 from abc import ABC, abstractmethod
 from typing import Optional, Dict, AsyncGenerator, Tuple, overload, Literal, Callable, Awaitable, Type, Collection
 
+import conf as conf
 import nonebot
 from nonebot import Bot, logger
 from nonebot.internal.adapter import Event
 from nonebot.internal.matcher import Matcher
 from sqlalchemy import select, delete
-from sqlalchemy.dialects.sqlite import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from .config import conf
@@ -128,8 +128,7 @@ class Service(ABC):
     async def get_permission(self, subject: str, with_default: bool = True) -> Optional[bool]:
         async def _get_permission(node: "Service", session: AsyncSession) -> Optional[bool]:
             stmt = (select(PermissionOrm)
-                    .where(PermissionOrm.plugin == node.plugin_service.name,
-                           PermissionOrm.service == node.name,
+                    .where(PermissionOrm.service == node.qualified_name,
                            PermissionOrm.subject == subject))
             p = (await session.execute(stmt)).scalar_one_or_none()
             if p is not None:
@@ -145,8 +144,7 @@ class Service(ABC):
     async def get_permissions(self) -> AsyncGenerator[Tuple[str, bool], None]:
         async with data_source.start_session() as session:
             stmt = (select(PermissionOrm)
-                    .where(PermissionOrm.plugin == self.plugin_service.name,
-                           PermissionOrm.service == self.name))
+                    .where(PermissionOrm.service == self.qualified_name))
             async for p in await session.stream_scalars(stmt):
                 yield p.subject, p.allow
 
@@ -164,14 +162,19 @@ class Service(ABC):
 
     async def set_permission(self, subject: str, allow: bool):
         async with data_source.start_session() as session:
-            stmt = (insert(PermissionOrm)
-                    .values(plugin=self.plugin_service.name,
-                            service=self.name,
-                            subject=subject,
-                            allow=allow)
-                    .on_conflict_do_update(set_={PermissionOrm.allow: allow}))
-            row_count = (await session.execute(stmt)).rowcount
-            ok = row_count == 1
+            stmt = (select(PermissionOrm)
+                    .where(PermissionOrm.service == self.qualified_name,
+                           PermissionOrm.subject == subject))
+            p = (await session.execute(stmt)).scalar_one_or_none()
+            if p is None:
+                p = PermissionOrm(service=self.qualified_name,
+                                  subject=subject,
+                                  allow=allow)
+                session.add(p)
+                ok = True
+            else:
+                ok = p.allow != allow
+                p.allow = allow
 
             if ok:
                 await session.commit()
@@ -191,8 +194,7 @@ class Service(ABC):
     async def remove_permission(self, subject: str) -> bool:
         async with data_source.start_session() as session:
             stmt = (delete(PermissionOrm)
-                    .where(PermissionOrm.plugin == self.plugin_service.name,
-                           PermissionOrm.service == self.name,
+                    .where(PermissionOrm.service == self.qualified_name,
                            PermissionOrm.subject == subject))
             row_count = (await session.execute(stmt)).rowcount
             ok = row_count == 1
@@ -298,10 +300,8 @@ async def get_services_by_subject(subject: str) -> AsyncGenerator[Tuple[Service,
     async with data_source.start_session() as session:
         stmt = select(PermissionOrm).where(PermissionOrm.subject == subject)
         async for x in await session.stream_scalars(stmt):
-            service = get_plugin_service(x.plugin)
-            if service is not None:
-                service = service.find(x.service)
-                yield service, x.allow
+            service = get_service_by_qualified_name(x.service)
+            yield service, x.allow
 
 
 __all__ = ("create_plugin_service", "get_plugin_service", "get_services_by_subject",
