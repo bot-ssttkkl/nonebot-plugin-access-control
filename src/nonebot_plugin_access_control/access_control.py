@@ -25,7 +25,7 @@ async def check(matcher: Matcher, bot: Bot, event: Event):
     if service is None:
         return
 
-    allow = await service(bot, event)
+    allow = await service.check(bot, event)
 
     if not allow:
         raise IgnoredException("permission denied by nonebot_plugin_access_control")

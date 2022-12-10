@@ -6,8 +6,9 @@ import nonebot
 from nonebot import Bot, logger
 from nonebot.internal.adapter import Event
 from nonebot.internal.matcher import Matcher
-from sqlalchemy import select, delete
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.sql.functions import count
 
 from .config import conf
 from .errors import RbacError
@@ -24,6 +25,9 @@ def _validate_name(name: str) -> bool:
 class Service(ABC):
     def __init__(self):
         self._subservices: Dict[str, Service] = {}
+
+    def __repr__(self):
+        return self.qualified_name
 
     @property
     @abstractmethod
@@ -81,19 +85,19 @@ class Service(ABC):
         from .access_control import patch_matcher
         return patch_matcher(matcher, self)
 
-    def on_allow_permission(self, func: Optional[T_Listener] = None):
-        return on_event(EventType.service_allow_permission,
-                        lambda kwargs: kwargs["service"] == self,
+    def on_set_permission(self, func: Optional[T_Listener] = None):
+        return on_event(EventType.service_set_permission,
+                        lambda service: service == self,
                         func)
 
-    def on_deny_permission(self, func: Optional[T_Listener] = None):
-        return on_event(EventType.service_deny_permission,
-                        lambda kwargs: kwargs["service"] == self,
+    def on_change_permission(self, func: Optional[T_Listener] = None):
+        return on_event(EventType.service_change_permission,
+                        lambda service: service == self,
                         func)
 
     def on_remove_permission(self, func: Optional[T_Listener] = None):
         return on_event(EventType.service_remove_permission,
-                        lambda kwargs: kwargs["service"] == self,
+                        lambda service: service == self,
                         func)
 
     async def _get_permission(self, node_permission_getter: Callable[["Service", AsyncSession],
@@ -113,11 +117,7 @@ class Service(ABC):
             return allow
 
     @overload
-    async def get_permission(self, subject: str) -> bool:
-        ...
-
-    @overload
-    async def get_permission(self, subject: str, with_default: Literal[True]) -> bool:
+    async def get_permission(self, subject: str, with_default: Literal[True] = True) -> bool:
         ...
 
     @overload
@@ -147,17 +147,61 @@ class Service(ABC):
             async for p in await session.stream_scalars(stmt):
                 yield p.subject, p.allow
 
-    async def _fire_service_set_permission(self, subject: str, allow: bool):
-        if allow:
-            event_type = EventType.service_allow_permission
-        else:
-            event_type = EventType.service_deny_permission
+    @overload
+    async def check(self, bot: Bot, event: Event, with_default: Literal[True] = True) -> bool:
+        ...
 
-        for node in self.travel():
-            await fire_event(event_type, {
-                "service": node,
-                "subject": subject
-            })
+    @overload
+    async def check(self, bot: Bot, event: Event, with_default: Literal[False]) -> Optional[bool]:
+        ...
+
+    async def check(self, bot: Bot, event: Event, with_default: bool = True) -> Optional[bool]:
+        subjects = extract_subjects(bot, event)
+        for sub in subjects:
+            p = await self.get_permission(sub, False)
+            if p is not None:
+                return p
+
+        if with_default:
+            return conf.access_control_default_permission == 'allow'
+        else:
+            return None
+
+    async def _fire_service_set_permission(self, subject: str, allow: bool):
+        await fire_event(EventType.service_set_permission, {
+            "service": self,
+            "subject": subject,
+            "allow": allow,
+        })
+
+    async def _fire_service_remove_permission(self, subject: str):
+        await fire_event(EventType.service_remove_permission, {
+            "service": self,
+            "subject": subject
+        })
+
+    async def _fire_service_change_permission(self, subject: str, allow: bool, session: AsyncSession):
+        await fire_event(EventType.service_change_permission, {
+            "service": self,
+            "subject": subject,
+            "allow": allow,
+        })
+
+        async def dfs(node: Service):
+            stmt = (select(count(PermissionOrm.subject))
+                    .where(PermissionOrm.service == node.qualified_name,
+                           PermissionOrm.subject == subject))
+            cnt = (await session.execute(stmt)).scalar_one()
+
+            if cnt == 0:
+                await fire_event(EventType.service_change_permission, {
+                    "service": node,
+                    "subject": subject,
+                    "allow": allow,
+                })
+
+        for c in self.children:
+            await dfs(c)
 
     async def set_permission(self, subject: str, allow: bool):
         async with data_source.start_session() as session:
@@ -170,48 +214,37 @@ class Service(ABC):
                                   subject=subject,
                                   allow=allow)
                 session.add(p)
-                ok = True
+                old_allow = None
             else:
-                ok = p.allow != allow
+                old_allow = p.allow
                 p.allow = allow
 
-            if ok:
+            if old_allow != allow:
                 await session.commit()
                 await self._fire_service_set_permission(subject, allow)
-
-            return ok
-
-    async def _fire_service_remove_permission(self, subject: str):
-        for node in self.travel():
-            await fire_event(EventType.service_remove_permission, {
-                "service": node,
-                "subject": subject
-            })
-
-        await self._fire_service_set_permission(subject, conf.access_control_default_permission == 'allow')
+                await self._fire_service_change_permission(subject, allow, session)
+                return True
+            else:
+                return False
 
     async def remove_permission(self, subject: str) -> bool:
         async with data_source.start_session() as session:
-            stmt = (delete(PermissionOrm)
+            stmt = (select(PermissionOrm)
                     .where(PermissionOrm.service == self.qualified_name,
                            PermissionOrm.subject == subject))
-            row_count = (await session.execute(stmt)).rowcount
-            ok = row_count == 1
+            p = (await session.execute(stmt)).scalar_one_or_none()
+            if p is None:
+                return False
 
-            if ok:
-                await session.commit()
-                await self._fire_service_remove_permission(subject)
+            await session.delete(p)
+            await session.commit()
 
-            return ok
+            await self._fire_service_remove_permission(subject)
 
-    async def __call__(self, bot: Bot, event: Event) -> bool:
-        subjects = extract_subjects(bot, event)
-        for sub in subjects:
-            p = await self.get_permission(sub, False)
-            if p is not None:
-                return p
+            allow = await self.get_permission(subject)
+            await self._fire_service_change_permission(subject, allow, session)
 
-        return conf.access_control_default_permission == 'allow'
+            return True
 
 
 class PluginService(Service):

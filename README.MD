@@ -28,7 +28,7 @@ _✨ Nonebot 权限控制 ✨_
 
 - [x] 支持**功能级别**的细粒度权限控制
 - [x] 对未适配插件也支持**插件级别**的权限控制
-- [ ] 支持对权限开关等事件进行监听
+- [x] 支持对权限开关等事件进行订阅
 
 ## 使用
 
@@ -189,6 +189,46 @@ async def _(matcher: Matcher):
 ```
 /ac subject onebot:g87654321 deny service nonebot_plugin_ac_demo
 /ac subject onebot:g87654321 allow service nonebot_plugin_ac_demo.c
+```
+
+5. 手动鉴权
+
+对于非Matcher的功能入口（如APScheduler的定时任务等），需要开发者手动进行鉴权。
+
+- 方法一：调用`service.check(Bot, Event)`方法，传入Bot及Event实例，返回bool值表示该用户是否具有权限
+- 方法二：调用`service.get_permission(str)`方法，传入主体字符串，返回bool值表示该用户是否具有权限
+
+6. 事件订阅
+
+通过`service.on_set_permission`、`service.on_remove_permission`、`service.on_change_permission`方法可以订阅事件，具体如下表：
+
+| 装饰器                            | 事件类型                                  | 事件接收函数的参数                                 |
+|--------------------------------|---------------------------------------|-------------------------------------------|
+| `service.on_set_permission`    | 服务设置主体权限                              | service：服务<br>subject：主体<br>allow：是否为允许权限 |
+| `service.on_remove_permission` | 服务删除主体权限                              | service：服务<br>subject：主体                  |
+| `service.on_change_permission` | 服务变更主体权限（包括该服务及其所有祖先服务设置、删除权限导致的权限变更） | service：服务<br>subject：主体<br>allow：是否为允许权限 |
+
+**调用事件接收函数时通过具名参数传参，因此事件接收函数的参数必须严格遵循参数名。**
+
+示例：
+
+```python
+@plugin_service.on_set_permission
+async def _(service: Service, subject: str, allow: bool):
+    logger.debug(f"on set permission: {service} {subject}, now allow={allow}")
+
+
+@plugin_service.on_remove_permission
+async def _(service: Service, subject: str):
+    allow = await service.get_permission(subject)
+    logger.debug(f"on remove permission: {service} {subject}, now allow={allow}")
+
+
+@a_service.on_change_permission
+@b_service.on_change_permission
+@c_service.on_change_permission
+async def _(service: Service, subject: str, allow: bool):
+    logger.debug(f"on change permission: {service} {subject}, now allow={allow}")
 ```
 
 ## 配置项
