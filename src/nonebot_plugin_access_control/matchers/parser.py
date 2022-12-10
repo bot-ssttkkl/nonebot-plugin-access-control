@@ -46,7 +46,7 @@ service_subparsers = service_parser.add_subparsers(help="操作", required=True,
 
 #     ==== service <xxx> ls ====
 service_ls_parser = service_subparsers.add_parser("ls", help="列出")
-service_ls_subparsers = service_ls_parser.add_subparsers(help="对象", required=True, dest="target")
+service_ls_subparsers = service_ls_parser.add_subparsers(help="对象", dest="target")
 
 #         ==== service <xxx> ls subject ====
 service_ls_subject_parser = service_ls_subparsers.add_parser("subject", help="列出服务的主体权限设置")

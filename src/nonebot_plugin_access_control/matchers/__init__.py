@@ -11,7 +11,8 @@ from nonebot.typing import T_State
 
 from .handle_error import handle_error
 from .parser import parser
-from ..service import get_services_by_subject, Service, get_plugin_service
+from ..service import get_services_by_subject, Service, get_service_by_qualified_name
+from ..utils.tree import get_tree_summary
 
 cmd = on_shell_command("ac", parser=parser, permission=SUPERUSER)
 
@@ -40,7 +41,9 @@ async def _(matcher: Matcher, event: Event, state: T_State):
                 await handle_subject_remove_service(matcher, args.subject, args.service)
     elif args.subcommand == 'service':
         if args.action == 'ls':
-            if args.target == 'subject':
+            if args.target is None:
+                await handle_service_ls_subservice(matcher, args.service)
+            elif args.target == 'subject':
                 await handle_service_ls_subject(matcher, args.service)
 
 
@@ -55,17 +58,13 @@ async def handle_subject_ls_service(matcher: Matcher, subject: str):
     await matcher.send(msg)
 
 
-async def _get_service(matcher: Matcher, service: str) -> Service:
-    if "." in service:
-        plugin_name, service_name = service.split(".")
-        service = get_plugin_service(plugin_name).find(service_name)
-    else:
-        service = get_plugin_service(service)
+async def _get_service(matcher: Matcher, service_name: str) -> Service:
+    service_name = get_service_by_qualified_name(service_name)
 
-    if service is None:
+    if service_name is None:
         await matcher.finish("service not found")
     else:
-        return service
+        return service_name
 
 
 async def handle_subject_allow_service(matcher: Matcher, subject: str, service: str):
@@ -114,3 +113,9 @@ async def handle_service_ls_subject(matcher: Matcher, service_name: str):
     else:
         msg = "empty"
     await matcher.send(msg)
+
+
+async def handle_service_ls_subservice(matcher: Matcher, service_name: str):
+    service = await _get_service(matcher, service_name)
+    summary = get_tree_summary(service, lambda x: x.children, lambda x: x.name)
+    await matcher.send(summary)

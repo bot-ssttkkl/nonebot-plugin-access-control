@@ -1,6 +1,6 @@
 import re
 from abc import ABC, abstractmethod
-from typing import Optional, Dict, AsyncGenerator, Tuple, overload, Literal, Callable, Awaitable, Type
+from typing import Optional, Dict, AsyncGenerator, Tuple, overload, Literal, Callable, Awaitable, Type, Collection
 
 import nonebot
 from nonebot import Bot, logger
@@ -32,6 +32,13 @@ class Service(ABC):
         raise NotImplementedError()
 
     @property
+    def qualified_name(self) -> str:
+        if self.parent is None:
+            return self.name
+        else:
+            return self.parent.qualified_name + "." + self.name
+
+    @property
     @abstractmethod
     def plugin_service(self) -> "PluginService":
         raise NotImplementedError()
@@ -42,23 +49,15 @@ class Service(ABC):
         raise NotImplementedError()
 
     @property
-    def qualified_name(self) -> str:
-        raise NotImplementedError()
-
-    def patch_matcher(self, matcher: Type[Matcher]) -> Type[Matcher]:
-        from .access_control import patch_matcher
-        return patch_matcher(matcher, self)
+    def children(self) -> "Collection[Service]":
+        return self._subservices.values()
 
     def create_subservice(self, name: str) -> "Service":
-        if name in self.plugin_service._plugin_subservices:
-            raise RbacError(f'{name} already exists')
-
         if not _validate_name(name):
             raise RbacError(f'invalid name: {name}')
 
         service = SubService(name, self.plugin_service, self)
         self._subservices[name] = service
-        self.plugin_service._plugin_subservices[name] = service
 
         logger.trace(f"created subservice {service.qualified_name}  (parent: {self.qualified_name})")
         return self._subservices[name]
@@ -78,6 +77,10 @@ class Service(ABC):
             if s.name == name:
                 return s
         return None
+
+    def patch_matcher(self, matcher: Type[Matcher]) -> Type[Matcher]:
+        from .access_control import patch_matcher
+        return patch_matcher(matcher, self)
 
     def on_allow_permission(self, func: Optional[T_Listener] = None):
         return on_event(EventType.service_allow_permission,
@@ -214,9 +217,7 @@ class PluginService(Service):
     def __init__(self, name: str, auto_created: bool):
         super().__init__()
         self._name = name
-        self._plugin_subservices = {}
-
-        self.auto_created = auto_created
+        self._auto_created = auto_created
 
     @property
     def name(self) -> str:
@@ -231,8 +232,8 @@ class PluginService(Service):
         return None
 
     @property
-    def qualified_name(self) -> str:
-        return self.name
+    def auto_created(self) -> bool:
+        return self._auto_created
 
 
 class SubService(Service):
@@ -253,10 +254,6 @@ class SubService(Service):
     @property
     def parent(self) -> "Optional[Service]":
         return self._parent
-
-    @property
-    def qualified_name(self) -> str:
-        return f"{self.plugin_service.name}.{self.name}"
 
 
 _plugin_services: Dict[str, PluginService] = {}
@@ -285,6 +282,16 @@ def get_plugin_service(plugin_name: str, auto_create: bool = True) -> Optional[P
             return _create_plugin_service(plugin_name, auto_create)
 
     return None
+
+
+def get_service_by_qualified_name(qualified_name: str, auto_create_plugin_service: bool = True) -> Optional[Service]:
+    seg = qualified_name.split('.')
+    service = get_plugin_service(seg[0], auto_create_plugin_service)
+    for i in range(1, len(seg)):
+        if service is None:
+            return None
+        service = service.get_subservice(seg[i])
+    return service
 
 
 async def get_services_by_subject(subject: str) -> AsyncGenerator[Tuple[Service, bool], None]:

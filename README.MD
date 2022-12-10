@@ -67,7 +67,7 @@ _✨ Nonebot 权限控制 ✨_
 
 ### 服务
 
-**服务（Service）为一组能够进行权限控制的功能的集合。**服务可以拥有子服务，通过树形结构组织服务，统一管理权限。
+**服务（Service）为一组能够进行权限控制的功能的集合。** 服务可以拥有子服务，通过树形结构组织服务，统一管理权限。
 
 整个插件就是一个服务（PluginService）。当插件未进行适配时，该插件只具有一个PluginService。
 
@@ -81,12 +81,13 @@ _✨ Nonebot 权限控制 ✨_
 - `/ac subject <主体> deny service <服务>`：为主体禁用服务
 - `/ac subject <主体> remove service <服务>`：为主体删除服务权限配置
 - `/ac subject <主体> ls service`：列出主体已配置的服务权限
+- `/ac service <服务> ls`：列出服务的子服务层级
 - `/ac service <服务> ls subject`：列出服务已配置的主体权限
 
 其中`<服务>`的格式如下：
 
 - `<插件名>`：对整个插件进行开关
-- `<插件名>.<子服务名>`：对插件内的某个子服务进行开关（需参照下文对插件进行配置）
+- `<插件名>.<子服务名>.<子服务名>.....<子服务名>`：对插件内的某个子服务进行开关（需参照下文对插件进行配置）
 
 ## 插件适配
 
@@ -153,7 +154,7 @@ async def _(matcher: Matcher):
 执行下面的指令后，用户12345678将无法调用指令`/a`
 
 ```
-/ac subject onebot:12345678 deny service nonebot_plugin_ac_demo.a
+/ac subject onebot:12345678 deny service nonebot_plugin_ac_demo.group1.a
 ```
 
 执行下面的指令后，群组87654321的所有用户将无法调用除`/c`以外的任何指令
