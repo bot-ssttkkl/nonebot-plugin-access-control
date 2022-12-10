@@ -67,7 +67,7 @@ _✨ Nonebot 权限控制 ✨_
 
 ### 服务
 
-服务（Service）为一组能够进行权限控制的功能的集合。服务可以拥有子服务，通过树结构组织服务，统一管理权限。
+**服务（Service）为一组能够进行权限控制的功能的集合。**服务可以拥有子服务，通过树形结构组织服务，统一管理权限。
 
 整个插件就是一个服务（PluginService）。当插件未进行适配时，该插件只具有一个PluginService。
 
@@ -77,11 +77,11 @@ _✨ Nonebot 权限控制 ✨_
 
 进行权限开关的指令为`/ac`，仅超级用户可用。（通过在配置文件中设置`SUPERUSERS`变量可设置超级用户）
 
-- `/ac subject <主体> allow <服务>`：为主体启用服务
-- `/ac subject <主体> deny <服务>`：为主体禁用服务
-- `/ac subject <主体> remove <服务>`：为主体删除服务权限配置
-- `/ac subject <主体> ls`：列出主体已配置的服务权限
-- `/ac service <服务> ls`：列出服务已配置的主体权限
+- `/ac subject <主体> allow service <服务>`：为主体启用服务
+- `/ac subject <主体> deny service <服务>`：为主体禁用服务
+- `/ac subject <主体> remove service <服务>`：为主体删除服务权限配置
+- `/ac subject <主体> ls service`：列出主体已配置的服务权限
+- `/ac service <服务> ls subject`：列出服务已配置的主体权限
 
 其中`<服务>`的格式如下：
 
@@ -106,23 +106,34 @@ from nonebot_plugin_access_control.service import create_plugin_service
 plugin_service = create_plugin_service("nonebot_plugin_ac_demo")
 ```
 
-3. 通过PluginService.create_subservice创建SubService实例。在创建Matcher时，将subservice传递至rule或permission参数中
+3. 通过PluginService.create_subservice创建SubService实例。调用`SubService.patch_matcher()`应用至Matcher
 
 ```python
 group1 = plugin_service.create_subservice("group1")
 
+a_matcher = on_command('a')
+a_service = group1.create_subservice('a')
+a_service.patch_matcher(a_matcher)
 
-@on_command('a', rule=group1.create_subservice("a")).handle()
+@a_matcher.handle()
 async def _(matcher: Matcher):
     await matcher.send("a")
 
+    
+b_matcher = on_command('b')
+b_service = group1.create_subservice('b')
+b_service.patch_matcher(b_matcher)
 
-@on_command('b', rule=group1.create_subservice("b")).handle()
+@b_matcher.handle()
 async def _(matcher: Matcher):
     await matcher.send("b")
 
+    
+c_matcher = on_command('c')
+c_service = plugin_service.create_subservice('c')
+c_service.patch_matcher(c_matcher)
 
-@on_command('c', rule=plugin_service.create_subservice("c")).handle()
+@c_matcher.handle()
 async def _(matcher: Matcher):
     await matcher.send("c")
 ```
@@ -136,18 +147,18 @@ async def _(matcher: Matcher):
 执行下面的指令后，所有用户将无法调用指令`/a`与`/b`
 
 ```
-/ac subject all deny nonebot_plugin_ac_demo.group1
+/ac subject all deny service nonebot_plugin_ac_demo.group1
 ```
 
 执行下面的指令后，用户12345678将无法调用指令`/a`
 
 ```
-/ac subject onebot:12345678 deny nonebot_plugin_ac_demo.a
+/ac subject onebot:12345678 deny service nonebot_plugin_ac_demo.a
 ```
 
 执行下面的指令后，群组87654321的所有用户将无法调用除`/c`以外的任何指令
 
 ```
-/ac subject onebot:g87654321 deny nonebot_plugin_ac_demo
-/ac subject onebot:g87654321 allow nonebot_plugin_ac_demo.c
+/ac subject onebot:g87654321 deny service nonebot_plugin_ac_demo
+/ac subject onebot:g87654321 allow service nonebot_plugin_ac_demo.c
 ```

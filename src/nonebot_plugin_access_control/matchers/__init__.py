@@ -1,4 +1,5 @@
 from argparse import Namespace
+from io import StringIO
 from typing import cast
 
 from nonebot import on_shell_command
@@ -26,16 +27,21 @@ async def _(matcher: Matcher, event: Event, state: T_State):
 
     if args.subcommand == 'subject':
         if args.action == 'ls':
-            await handle_subject_ls_service(matcher, args.subject)
+            if args.target == 'service':
+                await handle_subject_ls_service(matcher, args.subject)
         elif args.action == 'allow':
-            await handle_subject_allow_service(matcher, args.subject, args.service)
+            if args.target == 'service':
+                await handle_subject_allow_service(matcher, args.subject, args.service)
         elif args.action == 'deny':
-            await handle_subject_deny_service(matcher, args.subject, args.service)
+            if args.target == 'service':
+                await handle_subject_deny_service(matcher, args.subject, args.service)
         elif args.action == 'remove':
-            await handle_subject_remove_service(matcher, args.subject, args.service)
+            if args.target == 'service':
+                await handle_subject_remove_service(matcher, args.subject, args.service)
     elif args.subcommand == 'service':
         if args.action == 'ls':
-            await handle_service_ls_subject(matcher, args.service)
+            if args.target == 'subject':
+                await handle_service_ls_subject(matcher, args.service)
 
 
 async def handle_subject_ls_service(matcher: Matcher, subject: str):
@@ -80,13 +86,31 @@ async def handle_subject_remove_service(matcher: Matcher, subject: str, service:
     await matcher.send("ok")
 
 
-async def handle_service_ls_subject(matcher: Matcher, service: str):
-    service = await _get_service(matcher, service)
-    permissions = [x async for x in service.get_permissions()]
+async def handle_service_ls_subject(matcher: Matcher, service_name: str):
+    permissions = {}
+    service = await _get_service(matcher, service_name)
+
+    while service is not None:
+        async for subject, allow in service.get_permissions():
+            permissions.setdefault(subject, (allow, service))
+        service = service.parent
+
     if len(permissions) != 0:
         # 按照先allow再deny排序
-        permissions = sorted(permissions, key=lambda x: x[1], reverse=True)
-        msg = '\n'.join(map(lambda x: x[0] + (' allow' if x[1] else ' deny'), permissions))
+        permissions = [(*permissions[k], k) for k in permissions]
+        permissions = sorted(permissions, reverse=True)
+        with StringIO() as sio:
+            for allow, service, subject in permissions:
+                sio.write(subject)
+                if allow:
+                    sio.write(" allow")
+                else:
+                    sio.write(" deny")
+
+                if service.qualified_name != service_name:
+                    sio.write(f" (inherited from {service.qualified_name})")
+                sio.write('\n')
+            msg = sio.getvalue().strip()
     else:
         msg = "empty"
     await matcher.send(msg)

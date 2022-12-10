@@ -1,10 +1,11 @@
 import re
 from abc import ABC, abstractmethod
-from typing import Optional, Dict, AsyncGenerator, Tuple, overload, Literal, Callable, Awaitable
+from typing import Optional, Dict, AsyncGenerator, Tuple, overload, Literal, Callable, Awaitable, Type
 
 import nonebot
-from nonebot import Bot
+from nonebot import Bot, logger
 from nonebot.internal.adapter import Event
+from nonebot.internal.matcher import Matcher
 from sqlalchemy import select, delete
 from sqlalchemy.dialects.sqlite import insert
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -44,6 +45,10 @@ class Service(ABC):
     def qualified_name(self) -> str:
         raise NotImplementedError()
 
+    def patch_matcher(self, matcher: Type[Matcher]) -> Type[Matcher]:
+        from .access_control import patch_matcher
+        return patch_matcher(matcher, self)
+
     def create_subservice(self, name: str) -> "Service":
         if name in self.plugin_service._plugin_subservices:
             raise RbacError(f'{name} already exists')
@@ -54,6 +59,8 @@ class Service(ABC):
         service = SubService(name, self.plugin_service, self)
         self._subservices[name] = service
         self.plugin_service._plugin_subservices[name] = service
+
+        logger.trace(f"created subservice {service.qualified_name}  (parent: {self.qualified_name})")
         return self._subservices[name]
 
     def get_subservice(self, name: str) -> "Optional[Service]":
@@ -74,12 +81,17 @@ class Service(ABC):
 
     def on_allow_permission(self, func: Optional[T_Listener] = None):
         return on_event(EventType.service_allow_permission,
-                        lambda kwargs: kwargs.service == self,
+                        lambda kwargs: kwargs["service"] == self,
                         func)
 
     def on_deny_permission(self, func: Optional[T_Listener] = None):
         return on_event(EventType.service_deny_permission,
-                        lambda kwargs: kwargs.service == self,
+                        lambda kwargs: kwargs["service"] == self,
+                        func)
+
+    def on_remove_permission(self, func: Optional[T_Listener] = None):
+        return on_event(EventType.service_remove_permission,
+                        lambda kwargs: kwargs["service"] == self,
                         func)
 
     async def _get_permission(self, node_permission_getter: Callable[["Service", AsyncSession],
@@ -199,11 +211,12 @@ class Service(ABC):
 
 
 class PluginService(Service):
-    def __init__(self, name: str, created_by_user: bool):
+    def __init__(self, name: str, auto_created: bool):
         super().__init__()
         self._name = name
-        self._created_by_user = created_by_user
         self._plugin_subservices = {}
+
+        self.auto_created = auto_created
 
     @property
     def name(self) -> str:
@@ -249,26 +262,27 @@ class SubService(Service):
 _plugin_services: Dict[str, PluginService] = {}
 
 
-def _create_plugin_service(plugin_name: str, created_by_user: bool) -> PluginService:
+def _create_plugin_service(plugin_name: str, auto_create: bool) -> PluginService:
     if plugin_name in _plugin_services:
         raise ValueError(f"{plugin_name} already created")
 
-    service = PluginService(plugin_name, created_by_user)
+    service = PluginService(plugin_name, auto_create)
     _plugin_services[plugin_name] = service
+    logger.trace(f"created plugin service {service.qualified_name}")
     return service
 
 
 def create_plugin_service(plugin_name: str) -> PluginService:
-    return _create_plugin_service(plugin_name, True)
+    return _create_plugin_service(plugin_name, False)
 
 
-def get_plugin_service(plugin_name: str) -> Optional[PluginService]:
+def get_plugin_service(plugin_name: str, auto_create: bool = True) -> Optional[PluginService]:
     if plugin_name in _plugin_services:
         return _plugin_services[plugin_name]
-    else:
+    elif auto_create:
         plugin = nonebot.get_plugin(plugin_name)
         if plugin is not None:
-            return _create_plugin_service(plugin_name, False)
+            return _create_plugin_service(plugin_name, auto_create)
 
     return None
 

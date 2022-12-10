@@ -5,17 +5,31 @@ from .plugin_service import plugin_service
 
 group1 = plugin_service.create_subservice("group1")
 
+a_matcher = on_command('a')
+a_service = group1.create_subservice('a')
+a_service.patch_matcher(a_matcher)
 
-@on_command('a', rule=group1.create_subservice("a")).handle()
+
+@a_matcher.handle()
 async def _(matcher: Matcher):
     await matcher.send("a")
 
 
-@on_command('b', rule=group1.create_subservice("b")).handle()
+b_matcher = on_command('b')
+b_service = group1.create_subservice('b')
+b_service.patch_matcher(b_matcher)
+
+
+@b_matcher.handle()
 async def _(matcher: Matcher):
     await matcher.send("b")
 
 
-@on_command('c', rule=plugin_service.create_subservice("c")).handle()
+c_matcher = on_command('c')
+c_service = plugin_service.create_subservice('c')
+c_service.patch_matcher(c_matcher)
+
+
+@c_matcher.handle()
 async def _(matcher: Matcher):
     await matcher.send("c")
