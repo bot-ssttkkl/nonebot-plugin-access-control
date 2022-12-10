@@ -17,7 +17,9 @@ def extract_subjects(bot: Bot, event: Event) -> List[str]:
     subject_extractor = _subject_extractors.get(adapter, None)
     if subject_extractor is None:
         logger.warning(f"no subject extractor found for adapter {adapter}")
-        return [f"{adapter}:unknown"]
+
+        adapter = adapter.split(maxsplit=1)[0].lower()
+        return [f"{adapter}:unknown", adapter, "all"]
     return subject_extractor(bot, event)
 
 
