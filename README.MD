@@ -242,6 +242,16 @@ APScheduler示例：[src/nonebot_plugin_ac_demo/apscheduler_demo.py](src/nonebot
 
 默认值：`[]`
 
+## Q&A
+
+### **本插件与[nonebot_plugin_rauthman](https://github.com/Lancercmd/nonebot_plugin_rauthman)和[nonebot-plugin-manager](https://github.com/nonepkg/nonebot-plugin-manager)等其他权限管理插件有什么差别？**
+
+[nonebot_plugin_rauthman](https://github.com/Lancercmd/nonebot_plugin_rauthman)支持功能级别的细粒度权限控制，但是需要插件进行适配，对于未适配插件不起作用。[nonebot-plugin-manager](https://github.com/nonepkg/nonebot-plugin-manager)则实现了非侵入式的权限控制。
+
+本插件主要受这两个插件的启发，结合了这两个插件的优点。既支持非侵入式应用到原有插件，也支持对插件进行适配以获得更多feature。同时提供事件订阅机制，以便插件开发者更灵活处理权限。
+
+同时，上述两款插件均只支持OneBot V11协议，而本插件设计之初就考虑到了除OneBot V11以外的协议，具有更强的可扩展性。
+
 ## LICENSE
 
 > MIT License
