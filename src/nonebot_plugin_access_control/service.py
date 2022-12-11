@@ -59,6 +59,9 @@ class Service(ABC):
         if not _validate_name(name):
             raise RbacError(f'invalid name: {name}')
 
+        if name in self._subservices:
+            raise RbacError(f'subservice already exists: {self.qualified_name}.{name}')
+
         service = SubService(name, self.plugin_service, self)
         self._subservices[name] = service
 
@@ -101,44 +104,50 @@ class Service(ABC):
                         func)
 
     async def _get_permission(self, node_permission_getter: Callable[["Service", AsyncSession],
-                                                                     Awaitable[Optional[bool]]]) -> Optional[bool]:
-        async with data_source.start_session() as session:
-            v = self
-            allow = None
+                                                                     Awaitable[Optional[bool]]],
+                              session: AsyncSession) -> Optional[bool]:
+        v = self
+        allow = None
 
-            while v is not None:
-                p = await node_permission_getter(v, session)
-                if p is not None:
-                    allow = p
-                    break
-                else:
-                    v = v.parent
+        while v is not None:
+            p = await node_permission_getter(v, session)
+            if p is not None:
+                allow = p
+                break
+            else:
+                v = v.parent
 
-            return allow
+        return allow
 
     @overload
-    async def get_permission(self, subject: str, with_default: Literal[True] = True) -> bool:
+    async def get_permission(self, *subject: str, with_default: Literal[True] = True) -> bool:
         ...
 
     @overload
-    async def get_permission(self, subject: str, with_default: Literal[False]) -> Optional[bool]:
+    async def get_permission(self, *subject: str, with_default: Literal[False]) -> Optional[bool]:
         ...
 
-    async def get_permission(self, subject: str, with_default: bool = True) -> Optional[bool]:
-        async def _get_permission(node: "Service", session: AsyncSession) -> Optional[bool]:
+    async def get_permission(self, *subject: str, with_default: bool = True) -> Optional[bool]:
+        async def _get_permission(node: "Service", sub: str, session: AsyncSession) -> Optional[bool]:
             stmt = (select(PermissionOrm)
                     .where(PermissionOrm.service == node.qualified_name,
-                           PermissionOrm.subject == subject))
+                           PermissionOrm.subject == sub))
             p = (await session.execute(stmt)).scalar_one_or_none()
             if p is not None:
                 return p.allow
             else:
                 return None
 
-        allow = await self._get_permission(_get_permission)
-        if allow is None and with_default:
-            allow = conf.access_control_default_permission == 'allow'
-        return allow
+        async with data_source.start_session() as session:
+            for sub in subject:
+                allow = await self._get_permission(lambda node, session: _get_permission(node, sub, session), session)
+                if allow is not None:
+                    return allow
+
+            if with_default:
+                return conf.access_control_default_permission == 'allow'
+            else:
+                return None
 
     async def get_permissions(self) -> AsyncGenerator[Tuple[str, bool], None]:
         async with data_source.start_session() as session:
@@ -158,7 +167,7 @@ class Service(ABC):
     async def check(self, bot: Bot, event: Event, with_default: bool = True) -> Optional[bool]:
         subjects = extract_subjects(bot, event)
         for sub in subjects:
-            p = await self.get_permission(sub, False)
+            p = await self.get_permission(sub, with_default=False)
             if p is not None:
                 return p
 
