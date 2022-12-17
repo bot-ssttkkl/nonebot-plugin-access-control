@@ -166,15 +166,7 @@ class Service(ABC):
 
     async def check(self, bot: Bot, event: Event, with_default: bool = True) -> Optional[bool]:
         subjects = extract_subjects(bot, event)
-        for sub in subjects:
-            p = await self.get_permission(sub, with_default=False)
-            if p is not None:
-                return p
-
-        if with_default:
-            return conf.access_control_default_permission == 'allow'
-        else:
-            return None
+        return await self.get_permission(*subjects, with_default=with_default)
 
     async def _fire_service_set_permission(self, subject: str, allow: bool):
         await fire_event(EventType.service_set_permission, {
