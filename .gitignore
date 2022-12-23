@@ -171,3 +171,7 @@ poetry.toml
 # End of https://www.toptal.com/developers/gitignore/api/python
 
 /.idea/
+.env.dev
+.env.prod
+bot.py
+*.db

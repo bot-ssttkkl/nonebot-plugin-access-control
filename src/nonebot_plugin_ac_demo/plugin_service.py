@@ -1,6 +1,6 @@
 from nonebot import require
 
-require("nonebot_plugin_ac_demo")
+require("nonebot_plugin_access_control")
 
 from nonebot_plugin_access_control.service import create_plugin_service
 

@@ -20,6 +20,7 @@ aiosqlite = "^0.17.0"
 [tool.poetry.group.dev.dependencies]
 nonebot-adapter-onebot = "^2.1.5"
 nonebot-adapter-kaiheila = "^0.1.0"
+nonebot-plugin-apscheduler = "^0.2.0"
 
 [build-system]
 requires = ["poetry-core"]
