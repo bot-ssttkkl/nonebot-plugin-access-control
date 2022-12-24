@@ -33,7 +33,7 @@ async def check(matcher: Matcher, bot: Bot, event: Event):
 
 if conf.access_control_auto_patch_enabled:
     @get_driver().on_startup
-    def _do_patch():
+    def _():
         for plugin in nonebot.get_loaded_plugins():
             if plugin.name == 'nonebot_plugin_access_control' or plugin.name in conf.access_control_auto_patch_ignore:
                 continue

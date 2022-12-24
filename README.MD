@@ -91,6 +91,11 @@ _✨ Nonebot 权限控制 ✨_
 
 ### 示例
 
+首先编辑配置文件，打开对未适配插件的支持：
+```
+ACCESS_CONTROL_AUTO_PATCH_ENABLED=true
+```
+
 假设bot加载了内置插件echo
 
 ```python
