@@ -22,6 +22,7 @@ nonebot-adapter-kaiheila = "^0.1.0"
 nonebot-plugin-apscheduler = "^0.2.0"
 nonebot-adapter-console = "^0.2.1"
 nb-cli = "^0.6.8"
+asyncpg = "^0.27.0"
 
 [build-system]
 requires = ["poetry-core"]

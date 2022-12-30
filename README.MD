@@ -232,11 +232,13 @@ APScheduler示例：[src/nonebot_plugin_ac_demo/apscheduler_demo.py](src/nonebot
 
 ## 配置项
 
-### access_control_database_conn_url
+### datastore_database_url
 
-数据库连接URL，必须使用异步SQLAlchemy驱动器。
+（来自[nonebot-plugin-datastore](https://github.com/he0119/nonebot-plugin-datastore)）
 
-默认值：`sqlite+aiosqlite:///access_control.db`
+数据库连接字符串，默认使用 SQLite 数据库
+
+默认值：`sqlite+aiosqlite:///data_dir/data.db`
 
 ### access_control_default_permission
 
