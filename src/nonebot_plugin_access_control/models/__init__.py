@@ -1,12 +1,10 @@
-from sqlalchemy import Column, String, Boolean
-
-from .data_source import data_source
+from sqlmodel import SQLModel, Field
 
 
-@data_source.registry.mapped
-class PermissionOrm:
-    __tablename__ = 'permissions'
+class PermissionOrm(SQLModel, table=True):
+    __tablename__ = 'nonebot_plugin_access_control_permission'
+    __table_args__ = {"extend_existing": True}
 
-    subject: str = Column(String, nullable=False, primary_key=True)
-    service: str = Column(String, nullable=False, primary_key=True)
-    allow: bool = Column(Boolean, nullable=False)
+    subject: str = Field(primary_key=True)
+    service: str = Field(primary_key=True)
+    allow: bool

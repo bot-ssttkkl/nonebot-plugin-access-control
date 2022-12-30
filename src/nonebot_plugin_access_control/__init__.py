@@ -1,3 +1,7 @@
+from nonebot import require
+
+require("nonebot_plugin_datastore")
+
 from . import access_control
 from . import config
 from . import errors

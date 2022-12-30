@@ -6,6 +6,7 @@ import nonebot
 from nonebot import Bot, logger
 from nonebot.internal.adapter import Event
 from nonebot.internal.matcher import Matcher
+from nonebot_plugin_datastore.db import get_engine
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.sql.functions import count
@@ -13,7 +14,7 @@ from sqlalchemy.sql.functions import count
 from .config import conf
 from .errors import RbacError
 from .event_bus import on_event, EventType, T_Listener, fire_event
-from .models import data_source, PermissionOrm
+from .models import PermissionOrm
 from .subject import extract_subjects
 
 
@@ -111,7 +112,7 @@ class Service(ABC):
             else:
                 return None
 
-        async with data_source.start_session() as session:
+        async with AsyncSession(get_engine()) as session:
             for sub in subject:
                 allow = await self._get_permission(lambda node, session: _get_permission(node, sub, session), session)
                 if allow is not None:
@@ -123,7 +124,7 @@ class Service(ABC):
                 return None
 
     async def get_permissions(self) -> AsyncGenerator[Tuple[str, bool], None]:
-        async with data_source.start_session() as session:
+        async with AsyncSession(get_engine()) as session:
             stmt = (select(PermissionOrm)
                     .where(PermissionOrm.service == self.qualified_name))
             async for p in await session.stream_scalars(stmt):
@@ -178,7 +179,7 @@ class Service(ABC):
             await dfs(c)
 
     async def set_permission(self, subject: str, allow: bool):
-        async with data_source.start_session() as session:
+        async with AsyncSession(get_engine()) as session:
             stmt = (select(PermissionOrm)
                     .where(PermissionOrm.service == self.qualified_name,
                            PermissionOrm.subject == subject))
@@ -202,7 +203,7 @@ class Service(ABC):
                 return False
 
     async def remove_permission(self, subject: str) -> bool:
-        async with data_source.start_session() as session:
+        async with AsyncSession(get_engine()) as session:
             stmt = (select(PermissionOrm)
                     .where(PermissionOrm.service == self.qualified_name,
                            PermissionOrm.subject == subject))
@@ -364,7 +365,7 @@ def get_service_by_qualified_name(qualified_name: str, auto_create_plugin_servic
 
 
 async def get_services_by_subject(subject: str) -> AsyncGenerator[Tuple[Service, bool], None]:
-    async with data_source.start_session() as session:
+    async with AsyncSession(get_engine()) as session:
         stmt = select(PermissionOrm).where(PermissionOrm.subject == subject)
         async for x in await session.stream_scalars(stmt):
             service = get_service_by_qualified_name(x.service)
