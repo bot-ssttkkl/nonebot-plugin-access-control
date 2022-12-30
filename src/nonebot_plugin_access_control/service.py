@@ -23,9 +23,6 @@ def _validate_name(name: str) -> bool:
 
 
 class Service(ABC):
-    def __init__(self):
-        self._subservices: Dict[str, Service] = {}
-
     def __repr__(self):
         return self.qualified_name
 
@@ -36,14 +33,6 @@ class Service(ABC):
 
     @property
     def qualified_name(self) -> str:
-        if self.parent is None:
-            return self.name
-        else:
-            return self.parent.qualified_name + "." + self.name
-
-    @property
-    @abstractmethod
-    def plugin_service(self) -> "PluginService":
         raise NotImplementedError()
 
     @property
@@ -53,30 +42,14 @@ class Service(ABC):
 
     @property
     def children(self) -> "Collection[Service]":
-        return self._subservices.values()
-
-    def create_subservice(self, name: str) -> "Service":
-        if not _validate_name(name):
-            raise RbacError(f'invalid name: {name}')
-
-        if name in self._subservices:
-            raise RbacError(f'subservice already exists: {self.qualified_name}.{name}')
-
-        service = SubService(name, self.plugin_service, self)
-        self._subservices[name] = service
-
-        logger.trace(f"created subservice {service.qualified_name}  (parent: {self.qualified_name})")
-        return self._subservices[name]
-
-    def get_subservice(self, name: str) -> "Optional[Service]":
-        return self._subservices.get(name, None)
+        raise NotImplementedError()
 
     def travel(self):
         sta = [self]
         while len(sta) != 0:
             top, sta = sta[-1], sta[:-1]
             yield top
-            sta.extend(top._subservices.values())
+            sta.extend(top.children)
 
     def find(self, name: str) -> "Optional[Service]":
         for s in self.travel():
@@ -248,34 +221,95 @@ class Service(ABC):
             return True
 
 
-class PluginService(Service):
-    def __init__(self, name: str, auto_created: bool):
-        super().__init__()
-        self._name = name
-        self._auto_created = auto_created
+class NoneBotService(Service):
+    def __init__(self):
+        self._plugin_services: Dict[str, PluginService] = {}
 
     @property
     def name(self) -> str:
-        return self._name
+        return "nonebot"
 
     @property
-    def plugin_service(self) -> "PluginService":
-        return self
+    def qualified_name(self) -> str:
+        return "nonebot"
 
     @property
-    def parent(self) -> "Optional[Service]":
+    def parent(self) -> None:
         return None
 
     @property
-    def auto_created(self) -> bool:
-        return self._auto_created
+    def children(self) -> "Collection[PluginService]":
+        return self._plugin_services.values()
+
+    def _create_plugin_service(self, plugin_name: str, auto_create: bool) -> "PluginService":
+        if plugin_name in self._plugin_services:
+            raise ValueError(f"{plugin_name} already created")
+
+        service = PluginService(plugin_name, auto_create, self)
+        self._plugin_services[plugin_name] = service
+        logger.trace(f"created plugin service {service.qualified_name}")
+        return service
+
+    def create_plugin_service(self, plugin_name: str) -> "PluginService":
+        return self._create_plugin_service(plugin_name, False)
+
+    def get_plugin_service(self, plugin_name: str, auto_create: bool = True) -> "Optional[PluginService]":
+        if plugin_name in self._plugin_services:
+            return self._plugin_services[plugin_name]
+        elif auto_create:
+            plugin = nonebot.get_plugin(plugin_name)
+            if plugin is not None:
+                return self._create_plugin_service(plugin_name, auto_create)
+
+        return None
+
+    def get_service_by_qualified_name(self, qualified_name: str,
+                                      auto_create_plugin_service: bool = True) -> Optional[Service]:
+        seg = qualified_name.split('.')
+        service = self.get_plugin_service(seg[0], auto_create_plugin_service)
+        for i in range(1, len(seg)):
+            if service is None:
+                return None
+            service = service.get_subservice(seg[i])
+        return service
 
 
-class SubService(Service):
-    def __init__(self, name: str, plugin_service: PluginService, parent: Optional[Service] = None):
+_nonebot_service = NoneBotService()
+
+
+def get_nonebot_service() -> NoneBotService:
+    return _nonebot_service
+
+
+class _SubServiceParent(Service, ABC):
+    def __init__(self):
+        self._subservices: Dict[str, SubService] = {}
+
+    @property
+    def children(self) -> "Collection[Service]":
+        return self._subservices.values()
+
+    def create_subservice(self, name: str) -> "Service":
+        if not _validate_name(name):
+            raise RbacError(f'invalid name: {name}')
+
+        if name in self._subservices:
+            raise RbacError(f'subservice already exists: {self.qualified_name}.{name}')
+
+        service = SubService(name, self)
+        self._subservices[name] = service
+        logger.trace(f"created subservice {service.qualified_name}  (parent: {self.qualified_name})")
+        return self._subservices[name]
+
+    def get_subservice(self, name: str) -> "Optional[Service]":
+        return self._subservices.get(name, None)
+
+
+class PluginService(_SubServiceParent):
+    def __init__(self, name: str, auto_created: bool, parent: NoneBotService):
         super().__init__()
         self._name = name
-        self._plugin_service = plugin_service
+        self._auto_created = auto_created
         self._parent = parent
 
     @property
@@ -283,50 +317,50 @@ class SubService(Service):
         return self._name
 
     @property
-    def plugin_service(self) -> "PluginService":
-        return self._plugin_service
+    def qualified_name(self) -> str:
+        return self._name
 
     @property
-    def parent(self) -> "Optional[Service]":
+    def parent(self) -> "NoneBotService":
+        return self._parent
+
+    @property
+    def auto_created(self) -> bool:
+        return self._auto_created
+
+
+class SubService(_SubServiceParent):
+    def __init__(self, name: str, parent: Service):
+        super().__init__()
+        self._name = name
+        self._parent = parent
+
+    @property
+    def name(self) -> str:
+        return self._name
+
+    @property
+    def qualified_name(self) -> str:
+        return self.parent.qualified_name + "." + self.name
+
+    @property
+    def parent(self) -> Service:
         return self._parent
 
 
-_plugin_services: Dict[str, PluginService] = {}
-
-
-def _create_plugin_service(plugin_name: str, auto_create: bool) -> PluginService:
-    if plugin_name in _plugin_services:
-        raise ValueError(f"{plugin_name} already created")
-
-    service = PluginService(plugin_name, auto_create)
-    _plugin_services[plugin_name] = service
-    logger.trace(f"created plugin service {service.qualified_name}")
-    return service
-
-
 def create_plugin_service(plugin_name: str) -> PluginService:
-    return _create_plugin_service(plugin_name, False)
+    return get_nonebot_service().create_plugin_service(plugin_name)
 
 
 def get_plugin_service(plugin_name: str, auto_create: bool = True) -> Optional[PluginService]:
-    if plugin_name in _plugin_services:
-        return _plugin_services[plugin_name]
-    elif auto_create:
-        plugin = nonebot.get_plugin(plugin_name)
-        if plugin is not None:
-            return _create_plugin_service(plugin_name, auto_create)
-
-    return None
+    return get_nonebot_service().get_plugin_service(plugin_name, auto_create)
 
 
 def get_service_by_qualified_name(qualified_name: str, auto_create_plugin_service: bool = True) -> Optional[Service]:
-    seg = qualified_name.split('.')
-    service = get_plugin_service(seg[0], auto_create_plugin_service)
-    for i in range(1, len(seg)):
-        if service is None:
-            return None
-        service = service.get_subservice(seg[i])
-    return service
+    if qualified_name == 'nonebot':
+        return get_nonebot_service()
+
+    return get_nonebot_service().get_service_by_qualified_name(qualified_name, auto_create_plugin_service)
 
 
 async def get_services_by_subject(subject: str) -> AsyncGenerator[Tuple[Service, bool], None]:
@@ -337,5 +371,5 @@ async def get_services_by_subject(subject: str) -> AsyncGenerator[Tuple[Service,
             yield service, x.allow
 
 
-__all__ = ("create_plugin_service", "get_plugin_service", "get_services_by_subject",
-           "Service", "PluginService", "SubService")
+__all__ = ("create_plugin_service", "get_plugin_service", "get_service_by_qualified_name", "get_services_by_subject",
+           "Service", "PluginService", "SubService", "NoneBotService")

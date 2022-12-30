@@ -69,9 +69,13 @@ _✨ Nonebot 权限控制 ✨_
 
 **服务（Service）为一组能够进行权限控制的功能的集合。** 服务可以拥有子服务，通过树形结构组织服务，统一管理权限。
 
-整个插件就是一个服务（PluginService）。当插件未进行适配时，该插件只具有一个PluginService。
+整个NoneBot是一个名为nonebot的服务，为树形结构的根节点，其直接子节点为所有插件。
 
-若需要对插件进行适配，则需要从PluginService创建SubService，为插件的Matcher等功能入口应用SubService。（参考下文插件适配章节）
+一个插件是一个服务（PluginService），其父节点为nonebot。
+
+当插件未进行适配时，该插件只具有这一个PluginService。 对插件进行适配，则需要从插件的PluginService创建SubService，为插件的Matcher等功能入口应用SubService。（参考下文插件适配章节）
+
+（为防止意外发生，nonebot_plugin_access_control本身不可以进行权限开关）
 
 ### 指令
 
@@ -86,6 +90,7 @@ _✨ Nonebot 权限控制 ✨_
 
 其中`<服务>`的格式如下：
 
+- `nonebot`：对整个NoneBot进行开关
 - `<插件名>`：对整个插件进行开关
 - `<插件名>.<子服务名>.<子服务名>.....<子服务名>`：对插件内的某个子服务进行开关（需参照下文对插件进行配置）
 
@@ -106,6 +111,12 @@ nonebot.load_builtin_plugins("echo")
 
 ```
 /ac subject onebot:12345678 deny service echo
+```
+
+执行下面的指令后，用户12345678将无法调用所有指令
+
+```
+/ac subject all deny service nonebot
 ```
 
 执行下面的指令后，群组87654321的所有用户（用户12345678除外）将无法调用指令`/echo`

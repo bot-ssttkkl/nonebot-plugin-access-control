@@ -15,9 +15,12 @@ subject_ls_subparsers = subject_ls_parser.add_subparsers(help="对象", required
 #         ==== subject <xxx> ls service ====
 subject_ls_service_parser = subject_ls_subparsers.add_parser("service", help="列出主体可用服务")
 
-#     ==== subject <xxx> remove <xxx> ====
+#     ==== subject <xxx> remove/rm <xxx> ====
 subject_remove_parser = subject_subparsers.add_parser("remove", help="为主体移除服务的权限设置")
 subject_remove_subparsers = subject_remove_parser.add_subparsers(help="对象", dest="target")
+
+subject_rm_parser = subject_subparsers.add_parser("rm", help="为主体移除服务的权限设置")
+subject_rm_subparsers = subject_rm_parser.add_subparsers(help="对象", dest="target")
 
 #         ==== subject <xxx> remove service <xxx> ====
 subject_remove_service_parser = subject_remove_subparsers.add_parser("service", help="列出主体可用服务")

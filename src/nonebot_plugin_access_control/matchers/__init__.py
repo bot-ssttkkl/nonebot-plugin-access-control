@@ -36,7 +36,7 @@ async def _(matcher: Matcher, event: Event, state: T_State):
         elif args.action == 'deny':
             if args.target == 'service':
                 await handle_subject_deny_service(matcher, args.subject, args.service)
-        elif args.action == 'remove':
+        elif args.action == 'remove' or args.action == 'rm':
             if args.target == 'service':
                 await handle_subject_remove_service(matcher, args.subject, args.service)
     elif args.subcommand == 'service':
@@ -59,12 +59,12 @@ async def handle_subject_ls_service(matcher: Matcher, subject: str):
 
 
 async def _get_service(matcher: Matcher, service_name: str) -> Service:
-    service_name = get_service_by_qualified_name(service_name)
+    service = get_service_by_qualified_name(service_name)
 
-    if service_name is None:
+    if service is None:
         await matcher.finish("service not found")
     else:
-        return service_name
+        return service
 
 
 async def handle_subject_allow_service(matcher: Matcher, subject: str, service: str):
