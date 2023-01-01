@@ -252,7 +252,7 @@ APScheduler示例：[src/nonebot_plugin_ac_demo/apscheduler_demo.py](src/nonebot
 
 是否启用对未适配插件的权限控制
 
-默认值：`True`
+默认值：`False`
 
 ### access_control_auto_patch_ignore
 
