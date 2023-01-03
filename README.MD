@@ -83,7 +83,7 @@ _✨ Nonebot 权限控制 ✨_
 
 - `/ac subject <主体> allow service <服务>`：为主体启用服务
 - `/ac subject <主体> deny service <服务>`：为主体禁用服务
-- `/ac subject <主体> remove service <服务>`：为主体删除服务权限配置
+- `/ac subject <主体> rm service <服务>`：为主体删除服务权限配置
 - `/ac subject <主体> ls service`：列出主体已配置的服务权限
 - `/ac service <服务> ls`：列出服务的子服务层级
 - `/ac service <服务> ls subject`：列出服务已配置的主体权限

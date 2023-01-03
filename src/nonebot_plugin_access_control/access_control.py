@@ -8,7 +8,7 @@ from nonebot.internal.matcher import Matcher
 from nonebot.message import run_preprocessor
 
 from .config import conf
-from .service import Service, get_plugin_service
+from .service import Service, get_nonebot_service
 
 _matcher_service_mapping: Dict[Type[Matcher], Service] = {}
 
@@ -34,11 +34,13 @@ async def check(matcher: Matcher, bot: Bot, event: Event):
 if conf.access_control_auto_patch_enabled:
     @get_driver().on_startup
     def _():
+        nonebot_service = get_nonebot_service()
+
         for plugin in nonebot.get_loaded_plugins():
             if plugin.name == 'nonebot_plugin_access_control' or plugin.name in conf.access_control_auto_patch_ignore:
                 continue
 
-            service = get_plugin_service(plugin.name)
+            service = nonebot_service.get_or_create_plugin_service(plugin.name)
             if service.auto_created:
                 for matcher in plugin.matcher:
                     patch_matcher(matcher, service)

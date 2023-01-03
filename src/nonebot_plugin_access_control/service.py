@@ -252,22 +252,24 @@ class NoneBotService(Service):
         return service
 
     def create_plugin_service(self, plugin_name: str) -> "PluginService":
-        return self._create_plugin_service(plugin_name, False)
+        return self._create_plugin_service(plugin_name, auto_create=False)
 
-    def get_plugin_service(self, plugin_name: str, auto_create: bool = True) -> "Optional[PluginService]":
+    def get_plugin_service(self, plugin_name: str) -> "Optional[PluginService]":
         if plugin_name in self._plugin_services:
             return self._plugin_services[plugin_name]
-        elif auto_create:
-            plugin = nonebot.get_plugin(plugin_name)
-            if plugin is not None:
-                return self._create_plugin_service(plugin_name, auto_create)
-
         return None
 
-    def get_service_by_qualified_name(self, qualified_name: str,
-                                      auto_create_plugin_service: bool = True) -> Optional[Service]:
+    def get_or_create_plugin_service(self, plugin_name: str) -> "PluginService":
+        if plugin_name in self._plugin_services:
+            return self._plugin_services[plugin_name]
+        else:
+            plugin = nonebot.get_plugin(plugin_name)
+            if plugin is not None:
+                return self._create_plugin_service(plugin_name, auto_create=True)
+
+    def get_service_by_qualified_name(self, qualified_name: str) -> Optional[Service]:
         seg = qualified_name.split('.')
-        service = self.get_plugin_service(seg[0], auto_create_plugin_service)
+        service = self.get_plugin_service(seg[0])
         for i in range(1, len(seg)):
             if service is None:
                 return None
@@ -353,15 +355,15 @@ def create_plugin_service(plugin_name: str) -> PluginService:
     return get_nonebot_service().create_plugin_service(plugin_name)
 
 
-def get_plugin_service(plugin_name: str, auto_create: bool = True) -> Optional[PluginService]:
-    return get_nonebot_service().get_plugin_service(plugin_name, auto_create)
+def get_plugin_service(plugin_name: str) -> Optional[PluginService]:
+    return get_nonebot_service().get_plugin_service(plugin_name)
 
 
-def get_service_by_qualified_name(qualified_name: str, auto_create_plugin_service: bool = True) -> Optional[Service]:
+def get_service_by_qualified_name(qualified_name: str) -> Optional[Service]:
     if qualified_name == 'nonebot':
         return get_nonebot_service()
 
-    return get_nonebot_service().get_service_by_qualified_name(qualified_name, auto_create_plugin_service)
+    return get_nonebot_service().get_service_by_qualified_name(qualified_name)
 
 
 async def get_services_by_subject(subject: str) -> AsyncGenerator[Tuple[Service, bool], None]:
