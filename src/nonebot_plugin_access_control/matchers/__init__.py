@@ -123,7 +123,7 @@ async def handle_service_ls_subject(matcher: Matcher, service_name: str):
     if len(permissions) != 0:
         # 按照先allow再deny排序
         permissions = [(*permissions[k], k) for k in permissions]
-        permissions = sorted(permissions, reverse=True)
+        permissions = sorted(permissions, reverse=True, key=lambda x: (x[0], x[1].qualified_name, x[2]))
         with StringIO() as sio:
             for allow, service, subject in permissions:
                 sio.write(subject)
