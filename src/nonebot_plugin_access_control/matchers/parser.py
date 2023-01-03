@@ -1,7 +1,10 @@
 from nonebot.rule import ArgumentParser
 
 parser = ArgumentParser(prog="rbac")
-subparsers = parser.add_subparsers(help="子命令", required=True, dest="subcommand")
+subparsers = parser.add_subparsers(help="子命令", dest="subcommand")
+
+# ==== help ====
+help_parser = subparsers.add_parser("help", help="帮助")
 
 # ==== subject ====
 subject_parser = subparsers.add_parser("subject", help="主体管理")

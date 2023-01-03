@@ -268,6 +268,9 @@ class NoneBotService(Service):
                 return self._create_plugin_service(plugin_name, auto_create=True)
 
     def get_service_by_qualified_name(self, qualified_name: str) -> Optional[Service]:
+        if qualified_name == 'nonebot':
+            return self
+
         seg = qualified_name.split('.')
         service = self.get_plugin_service(seg[0])
         for i in range(1, len(seg)):
@@ -360,9 +363,6 @@ def get_plugin_service(plugin_name: str) -> Optional[PluginService]:
 
 
 def get_service_by_qualified_name(qualified_name: str) -> Optional[Service]:
-    if qualified_name == 'nonebot':
-        return get_nonebot_service()
-
     return get_nonebot_service().get_service_by_qualified_name(qualified_name)
 
 

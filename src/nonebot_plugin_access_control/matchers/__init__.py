@@ -26,7 +26,9 @@ async def _(matcher: Matcher, event: Event, state: T_State):
 
     args = cast(Namespace, args)
 
-    if args.subcommand == 'subject':
+    if args.subcommand is None or args.subcommand == 'help':
+        await handle_help(matcher)
+    elif args.subcommand == 'subject':
         if args.action == 'ls':
             if args.target == 'service':
                 await handle_subject_ls_service(matcher, args.subject)
@@ -45,6 +47,30 @@ async def _(matcher: Matcher, event: Event, state: T_State):
                 await handle_service_ls_subservice(matcher, args.service)
             elif args.target == 'subject':
                 await handle_service_ls_subject(matcher, args.service)
+        elif args.action == 'allow':
+            if args.target == 'subject':
+                await handle_subject_allow_service(matcher, args.subject, args.service)
+        elif args.action == 'deny':
+            if args.target == 'subject':
+                await handle_subject_deny_service(matcher, args.subject, args.service)
+        elif args.action == 'remove' or args.action == 'rm':
+            if args.target == 'subject':
+                await handle_subject_remove_service(matcher, args.subject, args.service)
+
+
+help_text = """
+/ac help：显示此帮助
+/ac subject <主体> allow service <服务>：为主体启用服务
+/ac subject <主体> deny service <服务>：为主体禁用服务
+/ac subject <主体> rm service <服务>：为主体删除服务权限配置
+/ac subject <主体> ls service：列出主体已配置的服务权限
+/ac service <服务> ls：列出服务的子服务层级
+/ac service <服务> ls subject：列出服务已配置的主体权限
+""".strip()
+
+
+async def handle_help(matcher: Matcher):
+    await matcher.send(help_text)
 
 
 async def handle_subject_ls_service(matcher: Matcher, subject: str):
