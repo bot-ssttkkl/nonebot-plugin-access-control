@@ -4,7 +4,7 @@ from nonebot import logger
 from nonebot.exception import MatcherException
 from nonebot.internal.matcher import current_matcher
 
-from ..errors import RbacError
+from ..errors import AccessControlError
 
 
 def handle_error(silently: bool = False):
@@ -15,7 +15,7 @@ def handle_error(silently: bool = False):
                 return await func(*args, **kwargs)
             except MatcherException as e:
                 raise e
-            except RbacError as e:
+            except AccessControlError as e:
                 logger.exception(e)
                 if not silently:
                     matcher = current_matcher.get()

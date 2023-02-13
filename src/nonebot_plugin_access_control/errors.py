@@ -1,2 +1,2 @@
-class RbacError(RuntimeError):
+class AccessControlError(RuntimeError):
     ...

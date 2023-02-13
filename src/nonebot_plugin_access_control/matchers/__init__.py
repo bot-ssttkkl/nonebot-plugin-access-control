@@ -1,6 +1,6 @@
 from argparse import Namespace
 from io import StringIO
-from typing import cast
+from typing import cast, Dict, Tuple, Optional
 
 from nonebot import on_shell_command
 from nonebot.exception import ParserExit
@@ -93,27 +93,27 @@ async def _get_service(matcher: Matcher, service_name: str) -> Service:
         return service
 
 
-async def handle_subject_allow_service(matcher: Matcher, subject: str, service: str):
-    service = await _get_service(matcher, service)
+async def handle_subject_allow_service(matcher: Matcher, subject: str, service_name: str):
+    service = await _get_service(matcher, service_name)
     await service.set_permission(subject, True)
     await matcher.send("ok")
 
 
-async def handle_subject_deny_service(matcher: Matcher, subject: str, service: str):
-    service = await _get_service(matcher, service)
+async def handle_subject_deny_service(matcher: Matcher, subject: str, service_name: str):
+    service = await _get_service(matcher, service_name)
     await service.set_permission(subject, False)
     await matcher.send("ok")
 
 
-async def handle_subject_remove_service(matcher: Matcher, subject: str, service: str):
-    service = await _get_service(matcher, service)
+async def handle_subject_remove_service(matcher: Matcher, subject: str, service_name: str):
+    service = await _get_service(matcher, service_name)
     await service.remove_permission(subject)
     await matcher.send("ok")
 
 
 async def handle_service_ls_subject(matcher: Matcher, service_name: str):
-    permissions = {}
-    service = await _get_service(matcher, service_name)
+    permissions: Dict[str, Tuple[bool, Service]] = {}
+    service: Optional[Service] = await _get_service(matcher, service_name)
 
     while service is not None:
         async for subject, allow in service.get_permissions():
@@ -122,10 +122,13 @@ async def handle_service_ls_subject(matcher: Matcher, service_name: str):
 
     if len(permissions) != 0:
         # 按照先allow再deny排序
-        permissions = [(*permissions[k], k) for k in permissions]
-        permissions = sorted(permissions, reverse=True, key=lambda x: (x[0], x[1].qualified_name, x[2]))
+        ordered_permissions = sorted(
+            [(*permissions[k], k) for k in permissions],
+            reverse=True,
+            key=lambda x: (x[0], x[1].qualified_name, x[2])
+        )
         with StringIO() as sio:
-            for allow, service, subject in permissions:
+            for allow, service, subject in ordered_permissions:
                 sio.write(subject)
                 if allow:
                     sio.write(" allow")
