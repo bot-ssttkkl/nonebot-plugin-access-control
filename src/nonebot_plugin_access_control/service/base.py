@@ -1,19 +1,17 @@
 from abc import ABC
-from typing import Optional, AsyncGenerator, Tuple, Generic, TypeVar, Type, Callable, Awaitable
+from datetime import timedelta
+from typing import Optional, Generic, TypeVar, Type, AsyncGenerator, Tuple
 
 from nonebot import Bot
 from nonebot.internal.adapter import Event
 from nonebot.internal.matcher import Matcher
-from nonebot_plugin_datastore.db import get_engine
-from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.sql.functions import count
 from typing_extensions import overload, Literal
 
+from .impl.permission import ServicePermissionImpl
+from .impl.rate_limit import ServiceRateLimitImpl
 from .interface import IService
-from ..config import conf
-from ..event_bus import T_Listener, on_event, EventType, fire_event
-from ..models import PermissionOrm
+from ..event_bus import T_Listener
+from ..models.rate_limit import LimitFor, RateLimitRuleOrm
 from ..subject import extract_subjects
 
 T_ParentService = TypeVar('T_ParentService', bound=Optional["Service"], covariant=True)
@@ -23,6 +21,10 @@ T_ChildService = TypeVar('T_ChildService', bound="Service", covariant=True)
 class Service(Generic[T_ParentService, T_ChildService],
               IService["Service", T_ParentService, T_ChildService],
               ABC):
+    def __init__(self):
+        self._permission_impl = ServicePermissionImpl[Service](self)
+        self._rate_limit_impl = ServiceRateLimitImpl[Service](self)
+
     def __repr__(self):
         return self.qualified_name
 
@@ -56,35 +58,13 @@ class Service(Generic[T_ParentService, T_ChildService],
         return await self.get_permission(*subjects, with_default=with_default)
 
     def on_set_permission(self, func: Optional[T_Listener] = None):
-        return on_event(EventType.service_set_permission,
-                        lambda service: service == self,
-                        func)
+        return self._permission_impl.on_set_permission(func)
 
     def on_change_permission(self, func: Optional[T_Listener] = None):
-        return on_event(EventType.service_change_permission,
-                        lambda service: service == self,
-                        func)
+        return self._permission_impl.on_change_permission(func)
 
     def on_remove_permission(self, func: Optional[T_Listener] = None):
-        return on_event(EventType.service_remove_permission,
-                        lambda service: service == self,
-                        func)
-
-    async def _get_permission(self, node_permission_getter: Callable[["Service", AsyncSession],
-                                                                     Awaitable[Optional[bool]]],
-                              session: AsyncSession) -> Optional[bool]:
-        v: Optional[Service] = self
-        allow = None
-
-        while v is not None:
-            p = await node_permission_getter(v, session)
-            if p is not None:
-                allow = p
-                break
-            else:
-                v = v.parent
-
-        return allow
+        return self._permission_impl.on_remove_permission(func)
 
     @overload
     async def get_permission(self, *subject: str, with_default: Literal[True] = True) -> bool:
@@ -95,110 +75,25 @@ class Service(Generic[T_ParentService, T_ChildService],
         ...
 
     async def get_permission(self, *subject: str, with_default: bool = True) -> Optional[bool]:
-        async def node_permission_getter(node: Service, sub: str, session: AsyncSession) -> Optional[bool]:
-            stmt = (select(PermissionOrm)
-                    .where(PermissionOrm.service == node.qualified_name,
-                           PermissionOrm.subject == sub))
-            p = (await session.execute(stmt)).scalar_one_or_none()
-            if p is not None:
-                return p.allow
-            else:
-                return None
+        return await self._permission_impl.get_permission(*subject, with_default=with_default)
 
-        async with AsyncSession(get_engine()) as session:
-            for sub in subject:
-                allow = await self._get_permission(lambda node, session: node_permission_getter(node, sub, session),
-                                                   session)
-                if allow is not None:
-                    return allow
-
-            if with_default:
-                return conf.access_control_default_permission == 'allow'
-            else:
-                return None
-
-    async def get_permissions(self) -> AsyncGenerator[Tuple[str, bool], None]:
-        async with AsyncSession(get_engine()) as session:
-            stmt = (select(PermissionOrm)
-                    .where(PermissionOrm.service == self.qualified_name))
-            async for p in await session.stream_scalars(stmt):
-                yield p.subject, p.allow
-
-    async def _fire_service_set_permission(self, subject: str, allow: bool):
-        await fire_event(EventType.service_set_permission, {
-            "service": self,
-            "subject": subject,
-            "allow": allow,
-        })
-
-    async def _fire_service_remove_permission(self, subject: str):
-        await fire_event(EventType.service_remove_permission, {
-            "service": self,
-            "subject": subject
-        })
-
-    async def _fire_service_change_permission(self, subject: str, allow: bool, session: AsyncSession):
-        await fire_event(EventType.service_change_permission, {
-            "service": self,
-            "subject": subject,
-            "allow": allow,
-        })
-
-        async def dfs(node: Service):
-            stmt = (select(count(PermissionOrm.subject))
-                    .where(PermissionOrm.service == node.qualified_name,
-                           PermissionOrm.subject == subject))
-            cnt = (await session.execute(stmt)).scalar_one()
-
-            if cnt == 0:
-                await fire_event(EventType.service_change_permission, {
-                    "service": node,
-                    "subject": subject,
-                    "allow": allow,
-                })
-
-        for c in self.children:
-            await dfs(c)
+    def get_permissions(self) -> AsyncGenerator[Tuple[str, bool], None]:
+        return self._permission_impl.get_permissions()
 
     async def set_permission(self, subject: str, allow: bool):
-        async with AsyncSession(get_engine()) as session:
-            stmt = (select(PermissionOrm)
-                    .where(PermissionOrm.service == self.qualified_name,
-                           PermissionOrm.subject == subject))
-            p = (await session.execute(stmt)).scalar_one_or_none()
-            if p is None:
-                p = PermissionOrm(service=self.qualified_name,
-                                  subject=subject,
-                                  allow=allow)
-                session.add(p)
-                old_allow = None
-            else:
-                old_allow = p.allow
-                p.allow = allow
-
-            if old_allow != allow:
-                await session.commit()
-                await self._fire_service_set_permission(subject, allow)
-                await self._fire_service_change_permission(subject, allow, session)
-                return True
-            else:
-                return False
+        return await self._permission_impl.set_permission(subject, allow)
 
     async def remove_permission(self, subject: str) -> bool:
-        async with AsyncSession(get_engine()) as session:
-            stmt = (select(PermissionOrm)
-                    .where(PermissionOrm.service == self.qualified_name,
-                           PermissionOrm.subject == subject))
-            p = (await session.execute(stmt)).scalar_one_or_none()
-            if p is None:
-                return False
+        return await self._permission_impl.remove_permission(subject)
 
-            await session.delete(p)
-            await session.commit()
+    def get_rate_limit_rules(self, subject: Optional[str]) -> AsyncGenerator[RateLimitRuleOrm, None]:
+        return self._rate_limit_impl.get_rate_limit_rules(subject)
 
-            await self._fire_service_remove_permission(subject)
+    async def add_rate_limit_rule(self, subject: str, time_span: timedelta, limit: int, limit_for: LimitFor):
+        return await self._rate_limit_impl.add_rate_limit_rule(subject, time_span, limit, limit_for)
 
-            allow = await self.get_permission(subject)
-            await self._fire_service_change_permission(subject, allow, session)
+    async def remove_rate_limit_rule(self, rule_id: int):
+        return await self._rate_limit_impl.remove_rate_limit_rule(rule_id)
 
-            return True
+    async def acquire_token_for_rate_limit(self, *subject: str) -> bool:
+        return await self._rate_limit_impl.acquire_token_for_rate_limit(*subject)

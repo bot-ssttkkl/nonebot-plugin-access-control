@@ -10,6 +10,7 @@ from ..errors import AccessControlError
 
 class NoneBotService(Service[None, PluginService]):
     def __init__(self):
+        super().__init__()
         self._plugin_services: Dict[str, PluginService] = {}
 
     @property

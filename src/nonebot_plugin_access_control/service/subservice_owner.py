@@ -22,6 +22,7 @@ class SubServiceOwner(Service[T_ParentService, T_ChildService],
                       ISubServiceOwner[T_ChildService],
                       ABC):
     def __init__(self):
+        super().__init__()
         self._subservices: Dict[str, T_ChildService] = {}
 
     @abstractmethod
