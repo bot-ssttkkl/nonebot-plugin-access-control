@@ -6,6 +6,9 @@ subparsers = parser.add_subparsers(help="子命令", dest="subcommand")
 # ==== help ====
 help_parser = subparsers.add_parser("help", help="帮助")
 
+# ==== ls ====
+ls_parser = subparsers.add_parser("ls", help="列出所有权限设置")
+
 # ==== subject ====
 subject_parser = subparsers.add_parser("subject", help="主体管理")
 subject_parser.add_argument("subject", help="主体")

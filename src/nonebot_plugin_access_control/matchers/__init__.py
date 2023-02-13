@@ -12,6 +12,7 @@ from nonebot.typing import T_State
 from .handle_error import handle_error
 from .parser import parser
 from ..service import get_services_by_subject, Service, get_service_by_qualified_name
+from ..service.methods import get_all_permissions
 from ..utils.tree import get_tree_summary
 
 cmd = on_shell_command("ac", parser=parser, permission=SUPERUSER)
@@ -28,6 +29,8 @@ async def _(matcher: Matcher, event: Event, state: T_State):
 
     if args.subcommand is None or args.subcommand == 'help':
         await handle_help(matcher)
+    elif args.subcommand == 'ls':
+        await handle_ls(matcher)
     elif args.subcommand == 'subject':
         if args.action == 'ls':
             if args.target == 'service':
@@ -60,6 +63,7 @@ async def _(matcher: Matcher, event: Event, state: T_State):
 
 help_text = """
 /ac help：显示此帮助
+/ac ls：列出所有权限配置
 /ac subject <主体> allow service <服务>：为主体启用服务
 /ac subject <主体> deny service <服务>：为主体禁用服务
 /ac subject <主体> rm service <服务>：为主体删除服务权限配置
@@ -71,6 +75,17 @@ help_text = """
 
 async def handle_help(matcher: Matcher):
     await matcher.send(help_text)
+
+
+async def handle_ls(matcher: Matcher):
+    services = [x async for x in get_all_permissions()]
+    if len(services) != 0:
+        # 按照服务全称排序
+        services = sorted(services, key=lambda x: x[0].qualified_name, reverse=True)
+        msg = '\n'.join(map(lambda x: x[0].qualified_name + (' allow' if x[1] else ' deny'), services))
+    else:
+        msg = "empty"
+    await matcher.send(msg)
 
 
 async def handle_subject_ls_service(matcher: Matcher, subject: str):

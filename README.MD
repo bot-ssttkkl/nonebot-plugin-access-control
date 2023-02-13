@@ -81,6 +81,7 @@ _✨ Nonebot 权限控制 ✨_
 
 进行权限开关的指令为`/ac`，仅超级用户可用。（通过在配置文件中设置`SUPERUSERS`变量可设置超级用户）
 
+- `/ac ls`：列出所有权限配置
 - `/ac subject <主体> allow service <服务>`：为主体启用服务
 - `/ac subject <主体> deny service <服务>`：为主体禁用服务
 - `/ac subject <主体> rm service <服务>`：为主体删除服务权限配置
