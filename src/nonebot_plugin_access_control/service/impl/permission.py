@@ -98,6 +98,7 @@ class ServicePermissionImpl(Generic[T_Service], IServicePermission):
 
     async def _fire_service_set_permission(self, subject: str, allow: bool):
         await fire_event(EventType.service_set_permission, {
+            "service": self.service,
             "permission": Permission(self.service, subject, allow),
         })
 
@@ -109,6 +110,7 @@ class ServicePermissionImpl(Generic[T_Service], IServicePermission):
 
     async def _fire_service_change_permission(self, subject: str, allow: bool, session: AsyncSession):
         await fire_event(EventType.service_change_permission, {
+            "service": self.service,
             "permission": Permission(self.service, subject, allow),
         })
 
@@ -122,6 +124,7 @@ class ServicePermissionImpl(Generic[T_Service], IServicePermission):
 
             if cnt == 0:
                 await fire_event(EventType.service_change_permission, {
+                    "service": node,
                     "permission": Permission(node, subject, allow),
                 })
 

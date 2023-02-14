@@ -1,4 +1,4 @@
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timedelta
 from typing import AsyncGenerator, TypeVar, Generic
 from typing import Optional
 
@@ -12,6 +12,7 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 from ..interface import IService
 from ..interface.rate_limit import IServiceRateLimit
 from ..rate_limit import RateLimitRule, RateLimitToken
+from ...event_bus import T_Listener, EventType, on_event, fire_event
 from ...models import RateLimitTokenOrm, RateLimitRuleOrm
 from ...utils.session import use_session_or_create
 
@@ -21,6 +22,16 @@ T_Service = TypeVar("T_Service", bound=IService)
 class ServiceRateLimitImpl(Generic[T_Service], IServiceRateLimit):
     def __init__(self, service: T_Service):
         self.service = service
+
+    def on_add_rate_limit_rule(self, func: Optional[T_Listener] = None):
+        return on_event(EventType.service_add_rate_limit_rule,
+                        lambda service: service == self.service,
+                        func)
+
+    def on_remove_rate_limit_rule(self, func: Optional[T_Listener] = None):
+        return on_event(EventType.service_remove_rate_limit_rule,
+                        lambda service: service == self.service,
+                        func)
 
     @staticmethod
     async def _get_rules_by_subject(service: Optional[T_Service],
@@ -85,6 +96,22 @@ class ServiceRateLimitImpl(Generic[T_Service], IServiceRateLimit):
             async for x in cls._get_rules_by_subject(None, None, sess):
                 yield x
 
+    @staticmethod
+    async def _fire_service_add_rate_limit_rule(rule: RateLimitRule):
+        for node in rule.service.travel():
+            await fire_event(EventType.service_add_rate_limit_rule, {
+                "service": node,
+                "rule": rule
+            })
+
+    @staticmethod
+    async def _fire_service_remove_rate_limit_rule(rule: RateLimitRule):
+        for node in rule.service.travel():
+            await fire_event(EventType.service_remove_rate_limit_rule, {
+                "service": node,
+                "rule": rule
+            })
+
     async def add_rate_limit_rule(self, subject: str, time_span: timedelta, limit: int,
                                   *, session: Optional[AsyncSession] = None):
         async with use_session_or_create(session) as sess:
@@ -94,22 +121,34 @@ class ServiceRateLimitImpl(Generic[T_Service], IServiceRateLimit):
             sess.add(orm)
             await sess.commit()
 
+            await sess.refresh(orm)
+
+            rule = RateLimitRule(orm.id, self.service, subject, time_span, limit)
+            await self._fire_service_add_rate_limit_rule(rule)
+
     @classmethod
     async def remove_rate_limit_rule(cls, rule_id: int,
                                      *, session: Optional[AsyncSession] = None) -> bool:
         async with use_session_or_create(session) as sess:
+            orm = await sess.get(RateLimitRuleOrm, rule_id)
+            if orm is None:
+                return False
+
             stmt = delete(RateLimitTokenOrm).where(
                 RateLimitTokenOrm.rule_id == rule_id
             )
             await sess.execute(stmt)
 
-            stmt = delete(RateLimitRuleOrm).where(
-                RateLimitRuleOrm.id == rule_id
-            )
-            result = await sess.execute(stmt)
+            await sess.delete(orm)
             await sess.commit()
 
-            return result.rowcount == 1
+            from ..methods import get_service_by_qualified_name
+            service = get_service_by_qualified_name(orm.service)
+
+            rule = RateLimitRule(orm.id, service, orm.subject, timedelta(seconds=orm.time_span), orm.limit)
+            await cls._fire_service_remove_rate_limit_rule(rule)
+
+            return True
 
     @staticmethod
     async def _acquire_token(rule: RateLimitRule, user: str,

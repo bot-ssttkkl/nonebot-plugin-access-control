@@ -23,6 +23,15 @@ class EventType(str, Enum):
     当某个服务权限变更时触发（包括该服务及其所有祖先服务设置、删除权限导致的权限变更）
     """
 
+    service_add_rate_limit_rule = "service_add_rate_limit_rule"
+    """
+    当某个服务添加限流规则时触发（该服务及其所有祖先服务添加限流规则时都会触发）
+    """
+    service_remove_rate_limit_rule = "service_remove_rate_limit_rule"
+    """
+    当某个服务删除限流规则时触发（该服务及其所有祖先服务删除限流规则时都会触发）
+    """
+
 
 T = TypeVar("T")
 T_Kwargs = Dict[str, Any]
@@ -43,7 +52,7 @@ def _call_with_kwargs(func: Callable[[...], T], kwargs: T_Kwargs) -> T:
 
 
 async def fire_event(event_type: EventType, kwargs: T_Kwargs):
-    logger.debug(f"on event {event_type}  (kwargs: {', '.join(map(lambda k: f'{k}={kwargs[k]}', kwargs))})")
+    logger.trace(f"on event {event_type}  (kwargs: {', '.join(map(lambda k: f'{k}={kwargs[k]}', kwargs))})")
 
     coros = []
 

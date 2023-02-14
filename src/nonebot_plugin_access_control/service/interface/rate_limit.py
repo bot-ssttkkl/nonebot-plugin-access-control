@@ -1,11 +1,20 @@
 from abc import ABC, abstractmethod
 from datetime import timedelta
-from typing import AsyncGenerator
+from typing import AsyncGenerator, Optional
 
 from ..rate_limit import RateLimitRule
+from ...event_bus import T_Listener
 
 
 class IServiceRateLimit(ABC):
+    @abstractmethod
+    def on_add_rate_limit_rule(self, func: Optional[T_Listener] = None):
+        raise NotImplementedError()
+
+    @abstractmethod
+    def on_remove_rate_limit_rule(self, func: Optional[T_Listener] = None):
+        raise NotImplementedError()
+
     @abstractmethod
     def get_rate_limit_rules_by_subject(self, *subject: str,
                                         trace: bool = True) -> AsyncGenerator[RateLimitRule, None]:

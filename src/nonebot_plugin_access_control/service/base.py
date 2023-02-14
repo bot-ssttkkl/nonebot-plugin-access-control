@@ -105,6 +105,12 @@ class Service(Generic[T_ParentService, T_ChildService],
     async def check_permission(self, *subject: str) -> bool:
         return await self._permission_impl.check_permission(*subject)
 
+    def on_add_rate_limit_rule(self, func: Optional[T_Listener] = None):
+        return self._rate_limit_impl.on_add_rate_limit_rule(func)
+
+    def on_remove_rate_limit_rule(self, func: Optional[T_Listener] = None):
+        return self._rate_limit_impl.on_remove_rate_limit_rule(func)
+
     def get_rate_limit_rules_by_subject(self, *subject: str,
                                         trace: bool = True) -> AsyncGenerator[RateLimitRule, None]:
         return self._rate_limit_impl.get_rate_limit_rules_by_subject(*subject, trace=trace)
