@@ -40,7 +40,7 @@ class IServiceRateLimit(ABC):
         ...
 
     @classmethod
-    async def remove_rate_limit_rule(cls, rule_id: int) -> bool:
+    async def remove_rate_limit_rule(cls, rule_id: str) -> bool:
         ...
 
     @abstractmethod

@@ -141,7 +141,7 @@ class Service(Generic[T_ParentService, T_ChildService],
         return await self._rate_limit_impl.add_rate_limit_rule(subject, time_span, limit, overwrite)
 
     @classmethod
-    async def remove_rate_limit_rule(cls, rule_id: int) -> bool:
+    async def remove_rate_limit_rule(cls, rule_id: str) -> bool:
         return await ServiceRateLimitImpl.remove_rate_limit_rule(rule_id)
 
     async def acquire_token_for_rate_limit(self, *subject: str, user: str) -> bool:

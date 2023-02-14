@@ -6,7 +6,7 @@ if TYPE_CHECKING:
 
 
 class RateLimitRule(NamedTuple):
-    id: int
+    id: str
     service: "Service"
     subject: str
     time_span: timedelta

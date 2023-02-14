@@ -145,17 +145,12 @@ class ServiceRateLimitImpl(Generic[T_Service], IServiceRateLimit):
             return rule
 
     @classmethod
-    async def remove_rate_limit_rule(cls, rule_id: int,
+    async def remove_rate_limit_rule(cls, rule_id: str,
                                      *, session: Optional[AsyncSession] = None) -> bool:
         async with use_session_or_create(session) as sess:
             orm = await sess.get(RateLimitRuleOrm, rule_id)
             if orm is None:
                 return False
-
-            stmt = delete(RateLimitTokenOrm).where(
-                RateLimitTokenOrm.rule_id == rule_id
-            )
-            await sess.execute(stmt)
 
             await sess.delete(orm)
             await sess.commit()

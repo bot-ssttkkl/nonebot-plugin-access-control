@@ -155,7 +155,7 @@ async def handle_permission_ls(matcher: Matcher, subject: Optional[str], service
 
 
 def _map_rule(sio: StringIO, rule: RateLimitRule, service_name: Optional[str]):
-    sio.write(f"#{rule.id} \'{rule.service.qualified_name}\' "
+    sio.write(f"[{rule.id}] \'{rule.service.qualified_name}\' "
               f"limit \'{rule.subject}\' to {rule.limit} time(s) "
               f"every {int(rule.time_span.total_seconds())}s")
     if rule.overwrite:
@@ -203,7 +203,6 @@ async def handle_limit_add(matcher: Matcher,
 
 
 async def handle_limit_rm(matcher: Matcher, rule_id: str):
-    rule_id = parse_integer(rule_id)
     ok = await Service.remove_rate_limit_rule(rule_id)
     if ok:
         await matcher.send('ok')
@@ -224,6 +223,9 @@ async def handle_limit_ls(matcher: Matcher, subject: Optional[str], service_name
             rules = [x async for x in service.get_rate_limit_rules_by_subject(subject)]
 
     if len(rules) != 0:
+        # 按照服务全称、subject排序
+        rules = sorted(rules, key=lambda x: (x.service.qualified_name, x.subject, x.id))
+
         with StringIO() as sio:
             for rule in rules:
                 _map_rule(sio, rule, service_name)
