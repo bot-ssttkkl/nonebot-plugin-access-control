@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from datetime import timedelta
-from typing import AsyncGenerator, Optional, TYPE_CHECKING
+from typing import AsyncGenerator, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from nonebot_plugin_access_control.rate_limit import RateLimitRule

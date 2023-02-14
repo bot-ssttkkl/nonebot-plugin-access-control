@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime
 from typing import Optional, List
 
 from sqlmodel import SQLModel, Field, Relationship

@@ -1,6 +1,6 @@
 import re
 from abc import ABC, abstractmethod
-from typing import Dict, Type, TypeVar, Collection, Optional
+from typing import Dict, TypeVar, Collection, Optional
 
 from nonebot import logger
 

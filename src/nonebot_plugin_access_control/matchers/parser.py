@@ -18,7 +18,7 @@ permission_deny_parser = permission_subparsers.add_parser("deny", help="为主�
 permission_deny_parser.add_argument("--sbj", "--subject", help="主体", dest="subject", required=True)
 permission_deny_parser.add_argument("--srv", "--service", help="服务", dest="service", required=True)
 
-permission_rm_parser = permission_subparsers.add_parser("deny", help="为主体删除服务权限配置")
+permission_rm_parser = permission_subparsers.add_parser("rm", help="为主体删除服务权限配置")
 permission_rm_parser.add_argument("--sbj", "--subject", help="主体", dest="subject", required=True)
 permission_rm_parser.add_argument("--srv", "--service", help="服务", dest="service", required=True)
 
@@ -47,5 +47,5 @@ limit_ls_parser.add_argument("--srv", "--service", help="服务", dest="service"
 service_parser = subparsers.add_parser("service", help="服务")
 service_subparsers = service_parser.add_subparsers(help="操作", dest="action", required=True)
 
-limit_ls_parser = limit_subparsers.add_parser("ls", help="列出服务与子服务层级")
-limit_ls_parser.add_argument("--srv", "--service", help="服务", dest="service")
+service_ls_parser = service_subparsers.add_parser("ls", help="列出服务与子服务层级")
+service_ls_parser.add_argument("--srv", "--service", help="服务", dest="service")

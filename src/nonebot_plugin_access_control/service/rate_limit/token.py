@@ -1,4 +1,5 @@
 from datetime import datetime, timezone, timedelta
+from typing import Optional
 
 from nonebot import require, logger
 from nonebot_plugin_datastore.db import get_engine
@@ -7,16 +8,17 @@ from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from nonebot_plugin_access_control.models.rate_limit import RateLimitTokenOrm, RateLimitRuleOrm
+from nonebot_plugin_access_control.utils.session import use_session_or_create
 
 
 class RateLimitToken:
     def __init__(self, orm: RateLimitTokenOrm):
         self.orm = orm
 
-    async def retire(self):
-        async with AsyncSession(get_engine()) as session:
-            await session.delete(self.orm)
-            await session.commit()
+    async def retire(self, *, session: Optional[AsyncSession] = None):
+        async with use_session_or_create(session) as sess:
+            await sess.delete(self.orm)
+            await sess.commit()
 
 
 require('nonebot_plugin_apscheduler')

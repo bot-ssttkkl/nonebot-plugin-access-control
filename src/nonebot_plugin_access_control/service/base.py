@@ -88,7 +88,7 @@ class Service(Generic[T_ParentService, T_ChildService],
     def get_all_permissions(self, *, trace: bool = True) -> AsyncGenerator[Permission, None]:
         return self._permission_impl.get_all_permissions(trace=trace)
 
-    async def set_permission(self, subject: str, allow: bool):
+    async def set_permission(self, subject: str, allow: bool) -> bool:
         return await self._permission_impl.set_permission(subject, allow)
 
     async def remove_permission(self, subject: str) -> bool:

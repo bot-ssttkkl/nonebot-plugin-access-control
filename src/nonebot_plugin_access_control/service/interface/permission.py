@@ -27,7 +27,7 @@ class IServicePermission(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    async def set_permission(self, subject: str, allow: bool):
+    async def set_permission(self, subject: str, allow: bool) -> bool:
         raise NotImplementedError()
 
     @abstractmethod
