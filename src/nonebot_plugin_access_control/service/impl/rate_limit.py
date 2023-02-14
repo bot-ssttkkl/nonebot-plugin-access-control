@@ -207,7 +207,7 @@ class ServiceRateLimitImpl(Generic[T_Service], IServiceRateLimit):
                                  f"(service: {rule.service}, subject: {rule.subject})")
                     tokens.append(token)
                 else:
-                    logger.trace(f"[rate limit] limit reached for rule {rule.id} "
+                    logger.debug(f"[rate limit] limit reached for rule {rule.id} "
                                  f"(service: {rule.service}, subject: {rule.subject})")
                     for t in tokens:
                         await self._retire_token(t, session=sess)
@@ -227,7 +227,7 @@ class ServiceRateLimitImpl(Generic[T_Service], IServiceRateLimit):
             stmt = delete(RateLimitTokenOrm)
             result = await sess.execute(stmt)
             await sess.commit()
-            logger.trace(f"deleted {result.rowcount} rate limit token(s)")
+            logger.debug(f"deleted {result.rowcount} rate limit token(s)")
 
 
 require('nonebot_plugin_apscheduler')
@@ -248,4 +248,4 @@ async def _delete_outdated_tokens():
 
             rowcount += result.rowcount
 
-        logger.trace(f"deleted {rowcount} outdated rate limit token(s)")
+        logger.debug(f"deleted {rowcount} outdated rate limit token(s)")

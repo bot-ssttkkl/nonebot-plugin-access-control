@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "nonebot-plugin-access-control"
-version = "0.3.0.rc1"
+version = "0.3.0"
 description = ""
 authors = ["ssttkkl <huang.wen.long@hotmail.com>"]
 license = "MIT"

@@ -179,11 +179,11 @@ class ServicePermissionImpl(Generic[T_Service], IServicePermission):
         async with use_session_or_create(session) as sess:
             p = await self.get_permission_by_subject(*subject, session=sess)
             if p is not None:
-                logger.trace(f"[permission] {'allowed' if p.allow else 'denied'} "
+                logger.debug(f"[permission] {'allowed' if p.allow else 'denied'} "
                              f"(service: {p.service}, subject: {p.subject})")
                 return p.allow
             else:
                 allow = conf.access_control_default_permission == 'allow'
-                logger.trace(f"[permission] {'allowed' if allow else 'denied'} (default) "
+                logger.debug(f"[permission] {'allowed' if allow else 'denied'} (default) "
                              f"(service: {self.service.qualified_name})")
                 return allow
