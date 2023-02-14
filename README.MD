@@ -54,21 +54,6 @@ _✨ Nonebot 权限控制 ✨_
 
 回到上面的例子，假设我们对主体”群组G“禁用服务，但是对主体”用户V“启用服务。则用户U在群组G内将无法使用服务，但是用户V在群组G内可以使用。
 
-#### 应用
-
-在实际应用中，我们用一个字符串表示主体。并且我们约定，`all`表示所有用户，`<协议名>`表示所有此协议的用户，除此之外的所有主体均以`<协议名>:`开头。
-
-在OneBot协议中，每个用户所拥有的主体如下表所定义：
-
-| 主体                 | 含义       | 示例               | 必定存在             |
-|--------------------|----------|------------------|------------------|
-| onebot:<user_id>   | 用户       | onebot:12345678  | 是                |
-| onebot:g<group_id> | 群组       | onebot:g87654321 | 仅当消息来自群组或临时会话时存在 |
-| onebot             | OneBot用户 | onebot           | 是                |
-| all                | 所有用户     | all              | 是                |
-
-目前仅实现了OneBot协议。如果你能帮助我们进行其他协议适配，欢迎提交PR。
-
 ### 服务
 
 **服务（Service）为一组能够进行权限控制的功能的集合。** 服务可以拥有子服务，通过树形结构组织服务，统一管理权限。
@@ -81,33 +66,93 @@ _✨ Nonebot 权限控制 ✨_
 
 （为防止意外发生，nonebot_plugin_access_control本身不可以进行权限开关）
 
-### 指令
+通过指令可查看所有服务及子服务层级：
+- `/ac service ls`：列出所有服务与子服务层级
+- `/ac service ls --srv <服务>`：列出服务的子服务层级
+
+其中`<服务>`的格式如下：
+
+- `nonebot`：对整个NoneBot进行开关
+- `<插件名>`：对整个插件进行开关
+- `<插件名>.<子服务名>.<子服务名>.....<子服务名>`：对插件内的某个子服务进行开关（需参照下文对插件进行配置）
+
+### 鉴权
+
+在插件使用中，我们用一个字符串表示主体。并且我们约定，`all`表示所有用户，`<协议名>`表示所有此协议的用户，除此之外的所有主体均以`<协议名>:`开头。
+
+在OneBot协议中，每个用户所拥有的主体如下表所定义：
+
+| 主体                 | 含义       | 示例               | 必定存在             |
+|--------------------|----------|------------------|------------------|
+| onebot:<user_id>   | 用户       | onebot:12345678  | 是                |
+| onebot:g<group_id> | 群组       | onebot:g87654321 | 仅当消息来自群组或临时会话时存在 |
+| onebot             | OneBot用户 | onebot           | 是                |
+| all                | 所有用户     | all              | 是                |
+
+目前仅实现了OneBot协议。如果你能帮助我们进行其他协议适配，欢迎提交PR。
+
+通过指令可实现权限开关：
+- `/ac permission allow --sbj <主体> --srv <服务>`：为主体启用服务
+- `/ac permission deny --sbj <主体> --srv <服务>`：为主体禁用服务
+- `/ac permission rm --sbj <主体> --srv <服务>`：为主体删除服务权限配置
+- `/ac permission ls`：列出所有已配置的权限
+- `/ac permission ls --sbj <主体>`：列出主体已配置的服务权限
+- `/ac permission ls --srv <服务>`：列出服务已配置的主体权限
+- `/ac permission ls --sbj <主体> --srv <服务>`：列出主体与服务已配置的权限
+
+其中`<服务>`的格式同上
+
+### 限流
+
+插件还提供了限流的功能（限制同一用户在一定时间内的指令调用次数）。
+
+限流规则同样是针对服务及主体的。与鉴权不同的是，限流规则是串联的。应用在一个用户拥有的所有主体的限流规则，与应用在一个服务及其所有祖先服务的限流规则，会同时对用户产生限制。
+
+举个例子，如果我们设置了”主体`all`每天最多调用100次`nonebot`服务“，”主体`onebot:g87654321`每分钟最多调用5次`nonebot_plugin_pixivbot`服务“。一位拥有`onebot:12345678`、`onebot:g87654321`、`onebot`、`all`这四个主体的用户尝试调用`nonebot_plugin_pixivbot.xxx`服务时，将同时受到以上两条规则的限制。
+
+如果我不希望这样的串联，该怎么办？通过为规则设置”覆写“属性，可以覆盖掉所有优先级低于该规则的规则。规则的优先级比较规则如下：
+
+- 若主体优先级不一致，按照主体优先级
+- 否则，按照服务的父子关系，父服务优先级低于子服务
+
+通过指令可对限流规则进行操作：
+ - `/ac limit add --sbj <主体> --srv <服务> --limit <次数> --span <时间间隔> [--overwrite]`：为主体与服务添加限流规则（`--overwrite`：为规则设置”覆写“属性）
+ - `/ac limit rm <规则ID>`：删除限流规则
+ - `/ac limit ls`：列出所有已配置的限流规则
+ - `/ac limit ls --sbj <主体>`：列出主体已配置的限流规则
+ - `/ac limit ls --srv <服务>`：列出服务已配置的限流规则
+ - `/ac limit ls --sbj <主体> --srv <服务>`：列出主体与服务已配置的限流规则
+ - `/ac limit reset`：重置限流计数
+
+其中`<服务>`的格式同上
+
+### 指令一览
 
 进行控制的指令为`/ac`，仅超级用户可用。（通过在配置文件中设置`SUPERUSERS`变量可设置超级用户）
 
 （注意：0.3.0版本对指令进行了一次大的更改）
 
 - 帮助
-    - /ac help：显示此帮助
+    - `/ac help`：显示此帮助
 - 权限控制
-    - /ac permission allow --sbj <主体> --srv <服务>：为主体启用服务
-    - /ac permission deny --sbj <主体> --srv <服务>：为主体禁用服务
-    - /ac permission rm --sbj <主体> --srv <服务>：为主体删除服务权限配置
-    - /ac permission ls：列出所有已配置的权限
-    - /ac permission ls --sbj <主体>：列出主体已配置的服务权限
-    - /ac permission ls --srv <服务>：列出服务已配置的主体权限
-    - /ac permission ls --sbj <主体> --srv <服务>：列出主体与服务已配置的权限
+    - `/ac permission allow --sbj <主体> --srv <服务>`：为主体启用服务
+    - `/ac permission deny --sbj <主体> --srv <服务>`：为主体禁用服务
+    - `/ac permission rm --sbj <主体> --srv <服务>`：为主体删除服务权限配置
+    - `/ac permission ls`：列出所有已配置的权限
+    - `/ac permission ls --sbj <主体>`：列出主体已配置的服务权限
+    - `/ac permission ls --srv <服务>`：列出服务已配置的主体权限
+    - `/ac permission ls --sbj <主体> --srv <服务>`：列出主体与服务已配置的权限
 - 流量限制
-    - /ac limit add --sbj <主体> --srv <服务> --limit <次数> --span <时间间隔>：为主体与服务添加限流规则（按照用户限流）
-    - /ac limit rm <规则ID>：删除限流规则
-    - /ac limit ls：列出所有已配置的限流规则
-    - /ac limit ls --sbj <主体>：列出主体已配置的限流规则
-    - /ac limit ls --srv <服务>：列出服务已配置的限流规则
-    - /ac limit ls --sbj <主体> --srv <服务>：列出主体与服务已配置的限流规则
-    - /ac limit reset：重置限流计数
+    - `/ac limit add --sbj <主体> --srv <服务> --limit <次数> --span <时间间隔> [--overwrite]`：为主体与服务添加限流规则
+    - `/ac limit rm <规则ID>`：删除限流规则
+    - `/ac limit ls`：列出所有已配置的限流规则
+    - `/ac limit ls --sbj <主体>`：列出主体已配置的限流规则
+    - `/ac limit ls --srv <服务>`：列出服务已配置的限流规则
+    - `/ac limit ls --sbj <主体> --srv <服务>`：列出主体与服务已配置的限流规则
+    - `/ac limit reset`：重置限流计数
 - 服务查看
-    - /ac service ls：列出所有服务与子服务层级
-    - /ac service ls --srv <服务>：列出服务的子服务层级
+    - `/ac service ls`：列出所有服务与子服务层级
+    - `/ac service ls --srv <服务>`：列出服务的子服务层级
 
 其中`<服务>`的格式如下：
 
@@ -129,29 +174,49 @@ ACCESS_CONTROL_AUTO_PATCH_ENABLED=true
 nonebot.load_builtin_plugins("echo")
 ```
 
+#### 鉴权
+
 执行下面的指令后，用户12345678将无法调用指令`/echo`
 
 ```
-/ac subject onebot:12345678 deny service echo
+/ac permission deny --sbj onebot:12345678 --srv echo
 ```
 
 执行下面的指令后，用户12345678将无法调用所有指令
 
 ```
-/ac subject all deny service nonebot
+/ac permission deny --sbj all --srv nonebot
 ```
 
 执行下面的指令后，群组87654321的所有用户（用户12345678除外）将无法调用指令`/echo`
 
 ```
-/ac subject onebot:12345678 allow service echo
-/ac subject onebot:g87654321 deny service echo
+/ac permission allow --sbj onebot:12345678 --srv echo
+/ac permission deny --sbj onebot:g87654321 --srv echo
 ```
 
 执行下面的指令后，所有用户将无法调用指令`/echo`
 
 ```
-/ac subject all deny service echo
+/ac permission deny --sbj all --srv echo
+```
+
+#### 限流
+
+执行下面的指令后，所有用户每天只能调用100次任意指令，且每分钟只能调用三次指令`/echo`
+
+```
+/ac limit add --sbj all --srv nonebot --span 1d --limit 100
+/ac limit add --sbj all --srv echo --span 1m --limit 3
+```
+
+执行下面的指令后，群组87654321的所有用户（用户12345678除外）每分钟只能调用三次指令`/echo`
+
+（用户12345678每分钟能够调用114514次指令`/echo`）
+
+```
+/ac limit add --sbj onebot:g87654321 --srv echo --span 1m --limit 3
+/ac limit add --sbj onebot:12345678 --srv echo --span 1m --limit 114514 --overwrite
 ```
 
 ## 插件适配
@@ -245,11 +310,13 @@ APScheduler示例：[src/nonebot_plugin_ac_demo/apscheduler_demo.py](src/nonebot
 
 通过`service.on_set_permission`、`service.on_remove_permission`、`service.on_change_permission`方法可以订阅事件，具体如下表：
 
-| 装饰器                            | 事件类型                                  | 事件接收函数的参数                   |
-|--------------------------------|---------------------------------------|-----------------------------|
-| `service.on_set_permission`    | 服务设置主体权限                              | service：服务<br>permission：权限 |
-| `service.on_remove_permission` | 服务删除主体权限                              | service：服务<br>subject：主体    |
-| `service.on_change_permission` | 服务变更主体权限（包括该服务及其所有祖先服务设置、删除权限导致的权限变更） | service：服务<br>permission：权限 |
+| 装饰器                                 | 事件类型                                  | 事件接收函数的参数                   |
+|-------------------------------------|---------------------------------------|-----------------------------|
+| `service.on_set_permission`         | 服务设置主体权限                              | service：服务<br>permission：权限 |
+| `service.on_remove_permission`      | 服务删除主体权限                              | service：服务<br>subject：主体    |
+| `service.on_change_permission`      | 服务变更主体权限（包括该服务及其所有祖先服务设置、删除权限导致的权限变更） | service：服务<br>permission：权限 |
+| `service.on_add_rate_limit_rule`    | 服务添加限流规则（该服务及其所有祖先服务添加限流规则时都会触发）      | service：服务<br>rule：限流规则     |
+| `service.on_remove_rate_limit_rule` | 服务删除限流规则（该服务及其所有祖先服务删除限流规则时都会触发）      | service：服务<br>rule：限流规则     |
 
 **调用事件接收函数时通过具名参数传参，因此事件接收函数的参数必须严格遵循参数名。**
 
@@ -299,8 +366,7 @@ APScheduler示例：[src/nonebot_plugin_ac_demo/apscheduler_demo.py](src/nonebot
 
 ## Q&A
 
-### **本插件与[nonebot_plugin_rauthman](https://github.com/Lancercmd/nonebot_plugin_rauthman)
-和[nonebot-plugin-manager](https://github.com/nonepkg/nonebot-plugin-manager)等其他权限管理插件有什么差别？**
+### **本插件与[nonebot_plugin_rauthman](https://github.com/Lancercmd/nonebot_plugin_rauthman)和[nonebot-plugin-manager](https://github.com/nonepkg/nonebot-plugin-manager)等其他权限管理插件有什么差别？**
 
 [nonebot_plugin_rauthman](https://github.com/Lancercmd/nonebot_plugin_rauthman)
 支持功能级别的细粒度权限控制，但是需要插件进行适配，对于未适配插件不起作用。[nonebot-plugin-manager](https://github.com/nonepkg/nonebot-plugin-manager)
