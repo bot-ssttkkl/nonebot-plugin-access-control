@@ -3,7 +3,6 @@ from typing import Optional, AsyncGenerator, TypeVar, Generic
 from nonebot import logger
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.sql.functions import count
 
 from ..interface.permission import IServicePermission
 from ..interface.service import IService
@@ -50,7 +49,7 @@ class ServicePermissionImpl(Generic[T_Service], IServicePermission):
                 from ..methods import get_service_by_qualified_name
                 service = get_service_by_qualified_name(x.service)
             if service is not None:
-                yield Permission(x, service)
+                yield Permission(service, x.subject, x.allow)
 
     async def get_permission_by_subject(self, *subject: str, trace: bool = True,
                                         session: Optional[AsyncSession] = None) -> Optional[Permission]:
@@ -98,9 +97,7 @@ class ServicePermissionImpl(Generic[T_Service], IServicePermission):
 
     async def _fire_service_set_permission(self, subject: str, allow: bool):
         await fire_event(EventType.service_set_permission, {
-            "service": self.service,
-            "subject": subject,
-            "allow": allow,
+            "permission": Permission(self.service, subject, allow),
         })
 
     async def _fire_service_remove_permission(self, subject: str):
@@ -111,26 +108,21 @@ class ServicePermissionImpl(Generic[T_Service], IServicePermission):
 
     async def _fire_service_change_permission(self, subject: str, allow: bool, session: AsyncSession):
         await fire_event(EventType.service_change_permission, {
-            "service": self.service,
-            "subject": subject,
-            "allow": allow,
+            "permission": Permission(self.service, subject, allow),
         })
 
-        async def dfs(node: T_Service):
-            stmt = (select(count(PermissionOrm.subject))
-                    .where(PermissionOrm.service == node.qualified_name,
-                           PermissionOrm.subject == subject))
-            cnt = (await session.execute(stmt)).scalar_one()
+        for node in self.service.travel():
+            if node == self.service:
+                continue
+
+            cnt = 0
+            async for x in self._get_permissions(node, subject, session):
+                cnt += 1
 
             if cnt == 0:
                 await fire_event(EventType.service_change_permission, {
-                    "service": node,
-                    "subject": subject,
-                    "allow": allow,
+                    "permission": Permission(node, subject, allow),
                 })
-
-        for c in self.service.children:
-            await dfs(c)
 
     async def set_permission(self, subject: str, allow: bool, session: Optional[AsyncSession] = None) -> bool:
         async with use_session_or_create(session) as sess:

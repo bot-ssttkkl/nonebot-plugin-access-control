@@ -37,7 +37,7 @@ class ServiceRateLimitImpl(Generic[T_Service], IServiceRateLimit):
                 from ..methods import get_service_by_qualified_name
                 service = get_service_by_qualified_name(x.service)
             if service is not None:
-                yield RateLimitRule(x, service)
+                yield RateLimitRule(x.id, service, x.subject, timedelta(seconds=x.time_span), x.limit)
 
     async def get_rate_limit_rules_by_subject(
             self, *subject: str,
@@ -126,13 +126,13 @@ class ServiceRateLimitImpl(Generic[T_Service], IServiceRateLimit):
             if cnt >= rule.limit:
                 return None
 
-            token_orm = RateLimitTokenOrm(rule_id=rule.id, user=user)
-            sess.add(token_orm)
+            x = RateLimitTokenOrm(rule_id=rule.id, user=user)
+            sess.add(x)
             await sess.commit()
 
-            await sess.refresh(token_orm)
+            await sess.refresh(x)
 
-            return RateLimitToken(token_orm)
+            return RateLimitToken(x.id, x.rule_id, x.user, x.acquire_time)
 
     @staticmethod
     async def _retire_token(token: RateLimitToken, *, session: Optional[AsyncSession] = None):
@@ -180,7 +180,7 @@ from nonebot_plugin_apscheduler import scheduler
 @scheduler.scheduled_job("cron", minute="*/10", id="delete_outdated_tokens")
 async def _delete_outdated_tokens():
     async with AsyncSession(get_engine()) as session:
-        now = datetime.now(timezone.utc)
+        now = datetime.utcnow()
         rowcount = 0
         async for rule in await session.stream_scalars(select(RateLimitRuleOrm)):
             stmt = (delete(RateLimitTokenOrm)

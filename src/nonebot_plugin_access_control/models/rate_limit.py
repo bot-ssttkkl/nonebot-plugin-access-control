@@ -23,7 +23,7 @@ class RateLimitTokenOrm(SQLModel, table=True):
 
     id: Optional[int] = Field(default=None, primary_key=True)
     rule_id: int = Field(foreign_key='nonebot_plugin_access_control_rate_limit_rule.id')
-    user: Optional[str]
+    user: str
     acquire_time: datetime = Field(default_factory=datetime.utcnow)
 
     rule: RateLimitRuleOrm = Relationship(back_populates="tokens")
