@@ -38,7 +38,7 @@ class IServiceBase(Generic[T_Service, T_ParentService, T_ChildService], ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def find(self, name: str) -> Optional[T_Service]:
+    def get_child(self, name: str) -> Optional[T_Service]:
         raise NotImplementedError()
 
     @abstractmethod

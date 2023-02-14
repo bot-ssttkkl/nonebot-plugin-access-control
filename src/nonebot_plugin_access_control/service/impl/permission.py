@@ -36,42 +36,65 @@ class ServicePermissionImpl(Generic[T_Service], IServicePermission):
                         func)
 
     @staticmethod
-    async def _get_permissions_by_subject(service: T_Service,
-                                          subject: Optional[str],
-                                          session: AsyncSession) -> AsyncGenerator[Permission, None]:
-        stmt = select(PermissionOrm).where(
-            PermissionOrm.service == service.qualified_name
-        )
+    async def _get_permissions(service: Optional[T_Service],
+                               subject: Optional[str],
+                               session: AsyncSession) -> AsyncGenerator[Permission, None]:
+        stmt = select(PermissionOrm)
+        if service is not None:
+            stmt.append_whereclause(PermissionOrm.service == service.qualified_name)
         if subject is not None:
             stmt.append_whereclause(PermissionOrm.subject == subject)
 
         async for x in await session.stream_scalars(stmt):
-            yield Permission(x, service)
+            if service is None:
+                from ..methods import get_service_by_qualified_name
+                service = get_service_by_qualified_name(x.service)
+            if service is not None:
+                yield Permission(x, service)
 
-    async def get_permission(self, *subject: str, trace: bool = True,
-                             session: Optional[AsyncSession] = None) -> Optional[Permission]:
+    async def get_permission_by_subject(self, *subject: str, trace: bool = True,
+                                        session: Optional[AsyncSession] = None) -> Optional[Permission]:
         async with use_session_or_create(session) as sess:
             for sub in subject:
                 if trace:
                     for node in self.service.trace():
-                        async for p in self._get_permissions_by_subject(node, sub, sess):
+                        async for p in self._get_permissions(node, sub, sess):
                             return p
                 else:
-                    async for p in self._get_permissions_by_subject(self.service, sub, sess):
+                    async for p in self._get_permissions(self.service, sub, sess):
                         return p
 
             return None
 
-    async def get_all_permissions(self, *, trace: bool = True,
-                                  session: Optional[AsyncSession] = None) -> AsyncGenerator[Permission, None]:
+    async def get_permissions(self, *, trace: bool = True,
+                              session: Optional[AsyncSession] = None) -> AsyncGenerator[Permission, None]:
         async with use_session_or_create(session) as sess:
             if trace:
                 for node in self.service.trace():
-                    async for p in self._get_permissions_by_subject(node, None, sess):
+                    async for p in self._get_permissions(node, None, sess):
                         yield p
             else:
-                async for p in self._get_permissions_by_subject(self.service, None, sess):
+                async for p in self._get_permissions(self.service, None, sess):
                     yield p
+
+    @classmethod
+    async def get_all_permissions_by_subject(
+            cls, *subject: str,
+            session: Optional[AsyncSession] = None
+    ) -> AsyncGenerator[Permission, None]:
+        overridden_services = set()
+        async with use_session_or_create(session) as sess:
+            for sub in subject:
+                async for x in cls._get_permissions(None, sub, sess):
+                    if x.service not in overridden_services:
+                        yield x
+                        overridden_services.add(x.service)
+
+    @classmethod
+    async def get_all_permissions(cls, *, session: Optional[AsyncSession] = None) -> AsyncGenerator[Permission, None]:
+        async with use_session_or_create(session) as sess:
+            async for x in cls._get_permissions(None, None, sess):
+                yield x
 
     async def _fire_service_set_permission(self, subject: str, allow: bool):
         await fire_event(EventType.service_set_permission, {
@@ -147,7 +170,7 @@ class ServicePermissionImpl(Generic[T_Service], IServicePermission):
 
             await self._fire_service_remove_permission(subject)
 
-            p = await self.get_permission(subject)
+            p = await self.get_permission_by_subject(subject)
             if p is not None:
                 allow = p.allow
             else:
@@ -158,7 +181,7 @@ class ServicePermissionImpl(Generic[T_Service], IServicePermission):
 
     async def check_permission(self, *subject: str, session: Optional[AsyncSession] = None) -> bool:
         async with use_session_or_create(session) as sess:
-            p = await self.get_permission(*subject, session=sess)
+            p = await self.get_permission_by_subject(*subject, session=sess)
             if p is not None:
                 logger.trace(f"[permission] {'allowed' if p.allow else 'denied'} "
                              f"(service: {p.service}, subject: {p.subject})")

@@ -12,7 +12,7 @@ async def _(service: Service, subject: str, allow: bool):
 
 @plugin_service.on_remove_permission
 async def _(service: Service, subject: str):
-    allow = await service.get_permission(subject)
+    allow = await service.get_permission_by_subject(subject)
     logger.debug(f"on remove permission: {service} {subject}, now allow={allow}")
 
 

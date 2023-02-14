@@ -1,19 +1,28 @@
 from abc import ABC, abstractmethod
 from datetime import timedelta
-from typing import AsyncGenerator, TYPE_CHECKING
+from typing import AsyncGenerator
 
-if TYPE_CHECKING:
-    from nonebot_plugin_access_control.rate_limit import RateLimitRule
+from ..rate_limit import RateLimitRule
 
 
 class IServiceRateLimit(ABC):
     @abstractmethod
-    def get_rate_limit_rules(self, *subject: str,
-                             trace: bool = True) -> AsyncGenerator["RateLimitRule", None]:
+    def get_rate_limit_rules_by_subject(self, *subject: str,
+                                        trace: bool = True) -> AsyncGenerator[RateLimitRule, None]:
         ...
 
     @abstractmethod
-    def get_all_rate_limit_rules(self, *, trace: bool = True) -> AsyncGenerator["RateLimitRule", None]:
+    def get_rate_limit_rules(self, *, trace: bool = True) -> AsyncGenerator[RateLimitRule, None]:
+        ...
+
+    @classmethod
+    @abstractmethod
+    def get_all_rate_limit_rules_by_subject(cls, *subject: str) -> AsyncGenerator[RateLimitRule, None]:
+        ...
+
+    @classmethod
+    @abstractmethod
+    def get_all_rate_limit_rules(cls) -> AsyncGenerator[RateLimitRule, None]:
         ...
 
     @abstractmethod
@@ -21,7 +30,7 @@ class IServiceRateLimit(ABC):
         ...
 
     @classmethod
-    async def remove_rate_limit_rule(cls, rule_id: int):
+    async def remove_rate_limit_rule(cls, rule_id: int) -> bool:
         ...
 
     @abstractmethod

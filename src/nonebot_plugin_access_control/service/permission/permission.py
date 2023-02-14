@@ -6,18 +6,9 @@ if TYPE_CHECKING:
 
 
 class Permission:
+    __slots__ = ('service', 'subject', 'allow')
+
     def __init__(self, orm: "PermissionOrm", service: "Service"):
-        self.orm = orm
-        self._service = service
-
-    @property
-    def service(self) -> "Service":
-        return self._service
-
-    @property
-    def subject(self) -> str:
-        return self.orm.subject
-
-    @property
-    def allow(self) -> bool:
-        return self.orm.allow
+        self.service = service
+        self.subject = orm.subject
+        self.allow = orm.allow

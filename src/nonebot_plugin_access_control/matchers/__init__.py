@@ -117,14 +117,16 @@ async def handle_permission_rm(matcher: Matcher, subject: str, service_name: str
 
 
 async def handle_permission_ls(matcher: Matcher, subject: Optional[str], service_name: Optional[str]):
-    if service_name is None:
-        service_name = 'nonebot'
-    service = await _get_service(matcher, service_name)
-
-    if subject is None:
-        permissions = [x async for x in service.get_all_permissions()]
+    if service_name is None and subject is None:
+        permissions = [x async for x in Service.get_all_permissions()]
+    elif service_name is None:
+        permissions = [x async for x in Service.get_all_permissions_by_subject(subject)]
     else:
-        permissions = [await service.get_permission(subject)]
+        service = await _get_service(matcher, service_name)
+        if subject is None:
+            permissions = [x async for x in service.get_permissions()]
+        else:
+            permissions = [await service.get_permission_by_subject(subject)]
 
     if len(permissions) != 0:
         # 按照服务全称、先allow再deny、subject排序
@@ -185,26 +187,31 @@ async def handle_limit_add(matcher: Matcher,
 
 async def handle_limit_rm(matcher: Matcher, rule_id: str):
     rule_id = parse_integer(rule_id)
-    await Service.remove_rate_limit_rule(rule_id)
-    await matcher.send('ok')
+    ok = await Service.remove_rate_limit_rule(rule_id)
+    if ok:
+        await matcher.send('ok')
+    else:
+        await matcher.send('rule not found')
 
 
 async def handle_limit_ls(matcher: Matcher, subject: Optional[str], service_name: Optional[str]):
-    if service_name is None:
-        service_name = 'nonebot'
-    service = await _get_service(matcher, service_name)
-
-    if subject is None:
-        rules = [x async for x in service.get_rate_limit_rules()]
+    if service_name is None and subject is None:
+        rules = [x async for x in Service.get_all_rate_limit_rules()]
+    elif service_name is None:
+        rules = [x async for x in Service.get_all_rate_limit_rules_by_subject(subject)]
     else:
-        rules = [x async for x in service.get_rate_limit_rules(subject)]
+        service = await _get_service(matcher, service_name)
+        if subject is None:
+            rules = [x async for x in service.get_rate_limit_rules()]
+        else:
+            rules = [x async for x in service.get_rate_limit_rules_by_subject(subject)]
 
     if len(rules) != 0:
         with StringIO() as sio:
             for rule in rules:
                 sio.write(f"#{rule.id} {rule.service.qualified_name} "
-                          f"limit {rule.subject} to {rule.limit} time(s)"
-                          f"every {rule.time_span.total_seconds()}s\n")
+                          f"limit {rule.subject} to {rule.limit} time(s) "
+                          f"every {int(rule.time_span.total_seconds())}s\n")
             await matcher.send(sio.getvalue().strip())
     else:
         await matcher.send("empty")

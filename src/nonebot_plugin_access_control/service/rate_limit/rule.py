@@ -8,26 +8,11 @@ if TYPE_CHECKING:
 
 
 class RateLimitRule:
+    __slots__ = ('id', 'service', 'subject', 'time_span', 'limit')
+
     def __init__(self, orm: RateLimitRuleOrm, service: "Service"):
-        self.orm = orm
-        self._service = service
-
-    @property
-    def id(self) -> int:
-        return self.orm.id
-
-    @property
-    def service(self) -> "Service":
-        return self._service
-
-    @property
-    def subject(self) -> str:
-        return self.orm.subject
-
-    @property
-    def time_span(self) -> timedelta:
-        return timedelta(seconds=self.orm.time_span)
-
-    @property
-    def limit(self) -> int:
-        return self.orm.limit
+        self.id = orm.id
+        self.service = service
+        self.subject = orm.subject
+        self.time_span = timedelta(seconds=orm.time_span)
+        self.limit = orm.limit

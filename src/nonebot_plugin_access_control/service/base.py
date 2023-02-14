@@ -42,8 +42,8 @@ class Service(Generic[T_ParentService, T_ChildService],
             yield node
             node = node.parent
 
-    def find(self, name: str) -> Optional["Service"]:
-        for s in self.travel():
+    def get_child(self, name: str) -> Optional["Service"]:
+        for s in self.children:
             if s.name == name:
                 return s
         return None
@@ -82,11 +82,19 @@ class Service(Generic[T_ParentService, T_ChildService],
     def on_remove_permission(self, func: Optional[T_Listener] = None):
         return self._permission_impl.on_remove_permission(func)
 
-    async def get_permission(self, *subject: str, trace: bool = True) -> Optional[Permission]:
-        return await self._permission_impl.get_permission(*subject, trace=trace)
+    async def get_permission_by_subject(self, *subject: str, trace: bool = True) -> Optional[Permission]:
+        return await self._permission_impl.get_permission_by_subject(*subject, trace=trace)
 
-    def get_all_permissions(self, *, trace: bool = True) -> AsyncGenerator[Permission, None]:
-        return self._permission_impl.get_all_permissions(trace=trace)
+    def get_permissions(self, *, trace: bool = True) -> AsyncGenerator[Permission, None]:
+        return self._permission_impl.get_permissions(trace=trace)
+
+    @classmethod
+    def get_all_permissions_by_subject(cls, *subject: str) -> AsyncGenerator[Permission, None]:
+        return ServicePermissionImpl.get_all_permissions_by_subject(*subject)
+
+    @classmethod
+    def get_all_permissions(cls) -> AsyncGenerator[Permission, None]:
+        return ServicePermissionImpl.get_all_permissions()
 
     async def set_permission(self, subject: str, allow: bool) -> bool:
         return await self._permission_impl.set_permission(subject, allow)
@@ -97,18 +105,26 @@ class Service(Generic[T_ParentService, T_ChildService],
     async def check_permission(self, *subject: str) -> bool:
         return await self._permission_impl.check_permission(*subject)
 
-    def get_rate_limit_rules(self, *subject: str,
-                             trace: bool = True) -> AsyncGenerator[RateLimitRule, None]:
-        return self._rate_limit_impl.get_rate_limit_rules(*subject, trace=trace)
+    def get_rate_limit_rules_by_subject(self, *subject: str,
+                                        trace: bool = True) -> AsyncGenerator[RateLimitRule, None]:
+        return self._rate_limit_impl.get_rate_limit_rules_by_subject(*subject, trace=trace)
 
-    def get_all_rate_limit_rules(self, *, trace: bool = True) -> AsyncGenerator[RateLimitRule, None]:
-        return self._rate_limit_impl.get_all_rate_limit_rules(trace=trace)
+    def get_rate_limit_rules(self, *, trace: bool = True) -> AsyncGenerator[RateLimitRule, None]:
+        return self._rate_limit_impl.get_rate_limit_rules(trace=trace)
+
+    @classmethod
+    def get_all_rate_limit_rules_by_subject(cls, *subject: str) -> AsyncGenerator[RateLimitRule, None]:
+        return ServiceRateLimitImpl.get_all_rate_limit_rules_by_subject(*subject)
+
+    @classmethod
+    def get_all_rate_limit_rules(cls) -> AsyncGenerator[RateLimitRule, None]:
+        return ServiceRateLimitImpl.get_all_rate_limit_rules()
 
     async def add_rate_limit_rule(self, subject: str, time_span: timedelta, limit: int):
         return await self._rate_limit_impl.add_rate_limit_rule(subject, time_span, limit)
 
     @classmethod
-    async def remove_rate_limit_rule(cls, rule_id: int):
+    async def remove_rate_limit_rule(cls, rule_id: int) -> bool:
         return await ServiceRateLimitImpl.remove_rate_limit_rule(rule_id)
 
     async def acquire_token_for_rate_limit(self, *subject: str, user: str) -> bool:

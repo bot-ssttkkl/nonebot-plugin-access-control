@@ -65,5 +65,5 @@ class NoneBotService(Service[None, PluginService]):
         for i in range(1, len(seg)):
             if service is None:
                 return None
-            service = service.find(seg[i])
+            service = service.get_child(seg[i])
         return service
