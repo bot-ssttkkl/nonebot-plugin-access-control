@@ -281,20 +281,20 @@ async def _(matcher: Matcher):
 执行下面的指令后，所有用户将无法调用指令`/a`与`/b`
 
 ```
-/ac subject all deny service nonebot_plugin_ac_demo.group1
+/ac permission deny --sbj all --srv nonebot_plugin_ac_demo.group1
 ```
 
 执行下面的指令后，用户12345678将无法调用指令`/a`
 
 ```
-/ac subject onebot:12345678 deny service nonebot_plugin_ac_demo.group1.a
+/ac permission deny --sbj onebot:12345678 --srv nonebot_plugin_ac_demo.group1.a
 ```
 
 执行下面的指令后，群组87654321的所有用户将无法调用除`/c`以外的任何指令
 
 ```
-/ac subject onebot:g87654321 deny service nonebot_plugin_ac_demo
-/ac subject onebot:g87654321 allow service nonebot_plugin_ac_demo.c
+/ac permission deny --sbj onebot:g87654321 --srv nonebot_plugin_ac_demo
+/ac permission allow --sbj onebot:g87654321 --srv nonebot_plugin_ac_demo.c
 ```
 
 5. 手动鉴权
