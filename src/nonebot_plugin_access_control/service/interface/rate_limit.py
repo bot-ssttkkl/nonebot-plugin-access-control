@@ -1,13 +1,19 @@
 from abc import ABC, abstractmethod
 from datetime import timedelta
-from typing import AsyncGenerator, Optional
+from typing import AsyncGenerator, Optional, TYPE_CHECKING
 
-from nonebot_plugin_access_control.rate_limit import RateLimitRule
+if TYPE_CHECKING:
+    from nonebot_plugin_access_control.rate_limit import RateLimitRule
 
 
 class IServiceRateLimit(ABC):
     @abstractmethod
-    def get_rate_limit_rules(self, subject: Optional[str]) -> AsyncGenerator[RateLimitRule, None]:
+    def get_rate_limit_rules(self, *subject: str,
+                             trace: bool = True) -> AsyncGenerator["RateLimitRule", None]:
+        ...
+
+    @abstractmethod
+    def get_all_rate_limit_rules(self, *, trace: bool = True) -> AsyncGenerator["RateLimitRule", None]:
         ...
 
     @abstractmethod

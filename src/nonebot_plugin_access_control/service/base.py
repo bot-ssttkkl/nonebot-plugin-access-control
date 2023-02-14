@@ -1,18 +1,18 @@
 from abc import ABC
 from datetime import timedelta
-from typing import Optional, Generic, TypeVar, Type, AsyncGenerator, Tuple
+from typing import Optional, Generic, TypeVar, Type, AsyncGenerator
 
-from nonebot import Bot, logger
+from nonebot import Bot
 from nonebot.internal.adapter import Event
 from nonebot.internal.matcher import Matcher
-from typing_extensions import overload, Literal
 
 from .impl.permission import ServicePermissionImpl
 from .impl.rate_limit import ServiceRateLimitImpl
 from .interface import IService
+from .permission import Permission
+from .rate_limit import RateLimitRule
 from ..errors import AccessControlError, PermissionDeniedError, RateLimitedError
 from ..event_bus import T_Listener
-from ..rate_limit import RateLimitRule
 from ..subject import extract_subjects
 
 T_ParentService = TypeVar('T_ParentService', bound=Optional["Service"], covariant=True)
@@ -61,7 +61,7 @@ class Service(Generic[T_ParentService, T_ChildService],
 
     async def check_or_throw(self, bot: Bot, event: Event, acquire_rate_limit_token: bool = True):
         subjects = extract_subjects(bot, event)
-        allow = await self.get_permission(*subjects)
+        allow = await self.check_permission(*subjects)
         if not allow:
             raise PermissionDeniedError()
 
@@ -82,19 +82,11 @@ class Service(Generic[T_ParentService, T_ChildService],
     def on_remove_permission(self, func: Optional[T_Listener] = None):
         return self._permission_impl.on_remove_permission(func)
 
-    @overload
-    async def get_permission(self, *subject: str, with_default: Literal[True] = True) -> bool:
-        ...
+    async def get_permission(self, *subject: str, trace: bool = True) -> Optional[Permission]:
+        return await self._permission_impl.get_permission(*subject, trace=trace)
 
-    @overload
-    async def get_permission(self, *subject: str, with_default: bool) -> Optional[bool]:
-        ...
-
-    async def get_permission(self, *subject: str, with_default: bool = True) -> Optional[bool]:
-        return await self._permission_impl.get_permission(*subject, with_default=with_default)
-
-    def get_permissions(self) -> AsyncGenerator[Tuple[str, bool], None]:
-        return self._permission_impl.get_permissions()
+    def get_all_permissions(self, *, trace: bool = True) -> AsyncGenerator[Permission, None]:
+        return self._permission_impl.get_all_permissions(trace=trace)
 
     async def set_permission(self, subject: str, allow: bool):
         return await self._permission_impl.set_permission(subject, allow)
@@ -102,8 +94,15 @@ class Service(Generic[T_ParentService, T_ChildService],
     async def remove_permission(self, subject: str) -> bool:
         return await self._permission_impl.remove_permission(subject)
 
-    def get_rate_limit_rules(self, subject: Optional[str]) -> AsyncGenerator[RateLimitRule, None]:
-        return self._rate_limit_impl.get_rate_limit_rules(subject)
+    async def check_permission(self, *subject: str) -> bool:
+        return await self._permission_impl.check_permission(*subject)
+
+    def get_rate_limit_rules(self, *subject: str,
+                             trace: bool = True) -> AsyncGenerator[RateLimitRule, None]:
+        return self._rate_limit_impl.get_rate_limit_rules(*subject, trace=trace)
+
+    def get_all_rate_limit_rules(self, *, trace: bool = True) -> AsyncGenerator[RateLimitRule, None]:
+        return self._rate_limit_impl.get_all_rate_limit_rules(trace=trace)
 
     async def add_rate_limit_rule(self, subject: str, time_span: timedelta, limit: int):
         return await self._rate_limit_impl.add_rate_limit_rule(subject, time_span, limit)
