@@ -37,15 +37,16 @@ async def get_services_by_subject(subject: str) -> AsyncGenerator[Tuple[Service,
                 yield service, x.allow
 
 
-async def get_all_permissions() -> AsyncGenerator[Tuple[Service, bool], None]:
+async def get_all_permissions() -> AsyncGenerator[Tuple[Service, bool, str], None]:
     async with AsyncSession(get_engine()) as session:
         stmt = select(PermissionOrm)
         async for x in await session.stream_scalars(stmt):
             service = get_service_by_qualified_name(x.service)
             if service is not None:
-                yield service, x.allow
+                yield service, x.allow, x.subject
 
 
 __all__ = ("get_nonebot_service",
            "create_plugin_service", "get_plugin_service",
-           "get_service_by_qualified_name", "get_services_by_subject")
+           "get_service_by_qualified_name", "get_services_by_subject",
+           "get_all_permissions")

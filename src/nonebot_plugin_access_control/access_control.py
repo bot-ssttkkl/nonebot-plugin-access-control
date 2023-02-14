@@ -8,6 +8,7 @@ from nonebot.internal.matcher import Matcher
 from nonebot.message import run_preprocessor
 
 from .config import conf
+from .errors import AccessControlError
 from .service import Service, get_nonebot_service
 
 _matcher_service_mapping: Dict[Type[Matcher], Service] = {}
@@ -25,9 +26,9 @@ async def check(matcher: Matcher, bot: Bot, event: Event):
     if service is None:
         return
 
-    allow = await service.check(bot, event)
-
-    if not allow:
+    try:
+        await service.check_or_throw(bot, event)
+    except AccessControlError as e:
         raise IgnoredException("permission denied by nonebot_plugin_access_control")
 
 

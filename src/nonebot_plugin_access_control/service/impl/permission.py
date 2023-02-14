@@ -1,5 +1,6 @@
 from typing import Optional, AsyncGenerator, Tuple, TypeVar, Generic
 
+from nonebot import logger
 from nonebot_plugin_datastore.db import get_engine
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -46,18 +47,13 @@ class ServicePermissionImpl(Generic[T_Service], IServicePermission):
             return None
 
     async def _get_permission(self, subject: str, session: AsyncSession) -> Optional[bool]:
-        node: Optional[T_Service] = self.service
         allow = None
-
-        while node is not None:
+        for node in self.service.trace():
             p = await self._node_permission_getter(node, subject, session)
             if p is not None:
-                allow = p
-                break
-            else:
-                node = node.parent
-
-        return allow
+                logger.trace(f"[permission] {'allowed' if allow else 'denied'} "
+                             f"(service:{node.qualified_name} subject: {subject})")
+                return allow
 
     @overload
     async def get_permission(self, *subject: str, with_default: Literal[True] = True) -> bool:
@@ -68,7 +64,6 @@ class ServicePermissionImpl(Generic[T_Service], IServicePermission):
         ...
 
     async def get_permission(self, *subject: str, with_default: bool = True) -> Optional[bool]:
-
         async with AsyncSession(get_engine()) as session:
             for sub in subject:
                 allow = await self._get_permission(sub, session)

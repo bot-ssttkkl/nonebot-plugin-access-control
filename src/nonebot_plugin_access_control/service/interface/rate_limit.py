@@ -2,19 +2,22 @@ from abc import ABC, abstractmethod
 from datetime import timedelta
 from typing import AsyncGenerator, Optional
 
-from nonebot_plugin_access_control.models import RateLimitRuleOrm
-from nonebot_plugin_access_control.models.rate_limit import LimitFor
+from nonebot_plugin_access_control.rate_limit import RateLimitRule
 
 
 class IServiceRateLimit(ABC):
     @abstractmethod
-    def get_rate_limit_rules(self, subject: Optional[str]) -> AsyncGenerator[RateLimitRuleOrm, None]:
+    def get_rate_limit_rules(self, subject: Optional[str]) -> AsyncGenerator[RateLimitRule, None]:
         ...
 
     @abstractmethod
-    async def add_rate_limit_rule(self, subject: str, time_span: timedelta, limit: int, limit_for: LimitFor):
+    async def add_rate_limit_rule(self, subject: str, time_span: timedelta, limit: int):
+        ...
+
+    @classmethod
+    async def remove_rate_limit_rule(cls, rule_id: int):
         ...
 
     @abstractmethod
-    async def remove_rate_limit_rule(self, rule_id: int):
+    async def acquire_token_for_rate_limit(self, *subject: str, user: str) -> bool:
         ...

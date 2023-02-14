@@ -4,7 +4,6 @@ from typing import Optional, Collection, Generic, Generator, Type, TypeVar
 from nonebot import Bot
 from nonebot.internal.adapter import Event
 from nonebot.internal.matcher import Matcher
-from typing_extensions import overload, Literal
 
 T_Service = TypeVar('T_Service', bound="IServiceBase", covariant=True)
 T_ParentService = TypeVar('T_ParentService', bound=Optional["IServiceBase"], covariant=True)
@@ -35,6 +34,10 @@ class IServiceBase(Generic[T_Service, T_ParentService, T_ChildService], ABC):
         raise NotImplementedError()
 
     @abstractmethod
+    def trace(self) -> Generator[T_Service, None, None]:
+        raise NotImplementedError()
+
+    @abstractmethod
     def find(self, name: str) -> Optional[T_Service]:
         raise NotImplementedError()
 
@@ -42,14 +45,10 @@ class IServiceBase(Generic[T_Service, T_ParentService, T_ChildService], ABC):
     def patch_matcher(self, matcher: Type[Matcher]) -> Type[Matcher]:
         raise NotImplementedError()
 
-    @overload
-    async def check(self, bot: Bot, event: Event, with_default: Literal[True] = True) -> bool:
-        ...
-
-    @overload
-    async def check(self, bot: Bot, event: Event, with_default: Literal[False]) -> Optional[bool]:
-        ...
+    @abstractmethod
+    async def check(self, bot: Bot, event: Event, acquire_rate_limit_token: bool = True) -> bool:
+        raise NotImplementedError()
 
     @abstractmethod
-    async def check(self, bot: Bot, event: Event, with_default: bool = True) -> Optional[bool]:
+    async def check_or_throw(self, bot: Bot, event: Event, acquire_rate_limit_token: bool = True):
         raise NotImplementedError()
