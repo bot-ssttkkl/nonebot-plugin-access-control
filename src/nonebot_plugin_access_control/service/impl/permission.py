@@ -45,11 +45,12 @@ class ServicePermissionImpl(Generic[T_Service], IServicePermission):
             stmt.append_whereclause(PermissionOrm.subject == subject)
 
         async for x in await session.stream_scalars(stmt):
-            if service is None:
+            s = service
+            if s is None:
                 from ..methods import get_service_by_qualified_name
-                service = get_service_by_qualified_name(x.service)
-            if service is not None:
-                yield Permission(service, x.subject, x.allow)
+                s = get_service_by_qualified_name(x.service)
+            if s is not None:
+                yield Permission(s, x.subject, x.allow)
 
     async def get_permission_by_subject(self, *subject: str, trace: bool = True,
                                         session: Optional[AsyncSession] = None) -> Optional[Permission]:

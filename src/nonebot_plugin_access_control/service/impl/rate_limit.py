@@ -33,11 +33,12 @@ class ServiceRateLimitImpl(Generic[T_Service], IServiceRateLimit):
             stmt.append_whereclause(RateLimitRuleOrm.subject == subject)
 
         async for x in await session.stream_scalars(stmt):
-            if service is None:
+            s = service
+            if s is None:
                 from ..methods import get_service_by_qualified_name
-                service = get_service_by_qualified_name(x.service)
-            if service is not None:
-                yield RateLimitRule(x.id, service, x.subject, timedelta(seconds=x.time_span), x.limit)
+                s = get_service_by_qualified_name(x.service)
+            if s is not None:
+                yield RateLimitRule(x.id, s, x.subject, timedelta(seconds=x.time_span), x.limit)
 
     async def get_rate_limit_rules_by_subject(
             self, *subject: str,

@@ -136,16 +136,16 @@ async def handle_permission_ls(matcher: Matcher, subject: Optional[str], service
         permissions = sorted(permissions, key=lambda x: (x.service.qualified_name, x.allow, x.subject))
         with StringIO() as sio:
             for p in permissions:
-                sio.write(p.service.qualified_name)
+                sio.write(f"\'{p.service.qualified_name}\'")
 
                 if p.allow:
                     sio.write(" allow ")
                 else:
                     sio.write(" deny ")
 
-                sio.write(p.subject)
-                if p.service.qualified_name != service_name:
-                    sio.write(f" (inherited from {p.service.qualified_name})")
+                sio.write(f"\'{p.subject}\'")
+                if service_name is not None and p.service.qualified_name != service_name:
+                    sio.write(f" (inherited from \'{p.service.qualified_name}\')")
                 sio.write('\n')
             msg = sio.getvalue().strip()
     else:
@@ -212,9 +212,12 @@ async def handle_limit_ls(matcher: Matcher, subject: Optional[str], service_name
     if len(rules) != 0:
         with StringIO() as sio:
             for rule in rules:
-                sio.write(f"#{rule.id} {rule.service.qualified_name} "
-                          f"limit {rule.subject} to {rule.limit} time(s) "
-                          f"every {int(rule.time_span.total_seconds())}s\n")
+                sio.write(f"#{rule.id} \'{rule.service.qualified_name}\' "
+                          f"limit \'{rule.subject}\' to {rule.limit} time(s) "
+                          f"every {int(rule.time_span.total_seconds())}s")
+                if service_name is not None and rule.service.qualified_name != service_name:
+                    sio.write(f" (inherited from \'{rule.service.qualified_name}\')")
+                sio.write('\n')
             await matcher.send(sio.getvalue().strip())
     else:
         await matcher.send("empty")
