@@ -13,6 +13,7 @@ class RateLimitRuleOrm(SQLModel, table=True):
     service: str
     time_span: int  # 单位：秒
     limit: int
+    overwrite: bool
 
     tokens: List["RateLimitTokenOrm"] = Relationship(back_populates="rule")
 

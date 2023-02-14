@@ -35,7 +35,8 @@ class IServiceRateLimit(ABC):
         ...
 
     @abstractmethod
-    async def add_rate_limit_rule(self, subject: str, time_span: timedelta, limit: int):
+    async def add_rate_limit_rule(self, subject: str, time_span: timedelta,
+                                  limit: int, overwrite: bool = False) -> RateLimitRule:
         ...
 
     @classmethod

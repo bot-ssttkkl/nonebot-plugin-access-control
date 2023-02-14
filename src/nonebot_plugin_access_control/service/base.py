@@ -136,8 +136,9 @@ class Service(Generic[T_ParentService, T_ChildService],
     def get_all_rate_limit_rules(cls) -> AsyncGenerator[RateLimitRule, None]:
         return ServiceRateLimitImpl.get_all_rate_limit_rules()
 
-    async def add_rate_limit_rule(self, subject: str, time_span: timedelta, limit: int):
-        return await self._rate_limit_impl.add_rate_limit_rule(subject, time_span, limit)
+    async def add_rate_limit_rule(self, subject: str, time_span: timedelta,
+                                  limit: int, overwrite: bool = False) -> RateLimitRule:
+        return await self._rate_limit_impl.add_rate_limit_rule(subject, time_span, limit, overwrite)
 
     @classmethod
     async def remove_rate_limit_rule(cls, rule_id: int) -> bool:

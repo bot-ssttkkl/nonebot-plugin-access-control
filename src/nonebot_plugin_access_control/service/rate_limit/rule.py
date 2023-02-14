@@ -11,3 +11,4 @@ class RateLimitRule(NamedTuple):
     subject: str
     time_span: timedelta
     limit: int
+    overwrite: bool

@@ -35,6 +35,7 @@ limit_add_parser.add_argument("--sbj", "--subject", help="主体", dest="subject
 limit_add_parser.add_argument("--srv", "--service", help="服务", dest="service", required=True)
 limit_add_parser.add_argument("--lim", "--limit", help="次数", dest="limit", required=True)
 limit_add_parser.add_argument("--span", help="时间间隔", dest="span", required=True)
+limit_add_parser.add_argument("--overwrite", help="覆写", action="store_true")
 
 limit_rm_parser = limit_subparsers.add_parser("rm", help="删除限流规则")
 limit_rm_parser.add_argument("id", help="规则ID")

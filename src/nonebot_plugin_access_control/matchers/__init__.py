@@ -12,6 +12,7 @@ from nonebot.typing import T_State
 from .handle_error import handle_error
 from .parser import parser
 from ..service import Service, get_service_by_qualified_name
+from ..service.rate_limit import RateLimitRule
 from ..utils.tree import get_tree_summary
 
 
@@ -52,7 +53,7 @@ async def _(matcher: Matcher, state: T_State):
             await handle_permission_ls(matcher, args.subject, args.service)
     elif args.subcommand == 'limit':
         if args.action == 'add':
-            await handle_limit_add(matcher, args.subject, args.service, args.limit, args.span)
+            await handle_limit_add(matcher, args.subject, args.service, args.limit, args.span, args.overwrite)
         elif args.action == 'rm':
             await handle_limit_rm(matcher, args.id)
         elif args.action == 'ls':
@@ -153,11 +154,22 @@ async def handle_permission_ls(matcher: Matcher, subject: Optional[str], service
     await matcher.send(msg)
 
 
+def _map_rule(sio: StringIO, rule: RateLimitRule, service_name: Optional[str]):
+    sio.write(f"#{rule.id} \'{rule.service.qualified_name}\' "
+              f"limit \'{rule.subject}\' to {rule.limit} time(s) "
+              f"every {int(rule.time_span.total_seconds())}s")
+    if rule.overwrite:
+        sio.write(" (overwrite)")
+    if service_name is not None and rule.service.qualified_name != service_name:
+        sio.write(f" (inherited from \'{rule.service.qualified_name}\')")
+
+
 async def handle_limit_add(matcher: Matcher,
                            subject: str,
                            service_name: str,
                            limit: str,
-                           time_span: str):
+                           time_span: str,
+                           overwrite: bool):
     if (time_span.endswith('s')
             or time_span.endswith('sec')
             or time_span.endswith('second')
@@ -177,15 +189,17 @@ async def handle_limit_add(matcher: Matcher,
           or time_span.endswith('days')):
         time_span = timedelta(days=parse_integer(time_span, full=False))
     else:
-        await matcher.send("请指定时间单位（sec/min/hour/day）")
+        await matcher.send("must specify span's unit (sec/min/hour/day)")
 
     limit = parse_integer(limit)
     if limit == 0:
-        await matcher.send('限流次数必须大于0')
+        await matcher.send('limit must be non-zero')
     else:
         service = await _get_service(matcher, service_name)
-        await service.add_rate_limit_rule(subject, time_span, limit)
-        await matcher.send('ok')
+        rule = await service.add_rate_limit_rule(subject, time_span, limit, overwrite)
+        with StringIO() as sio:
+            _map_rule(sio, rule, service_name)
+            await matcher.send(sio.getvalue().strip())
 
 
 async def handle_limit_rm(matcher: Matcher, rule_id: str):
@@ -212,11 +226,7 @@ async def handle_limit_ls(matcher: Matcher, subject: Optional[str], service_name
     if len(rules) != 0:
         with StringIO() as sio:
             for rule in rules:
-                sio.write(f"#{rule.id} \'{rule.service.qualified_name}\' "
-                          f"limit \'{rule.subject}\' to {rule.limit} time(s) "
-                          f"every {int(rule.time_span.total_seconds())}s")
-                if service_name is not None and rule.service.qualified_name != service_name:
-                    sio.write(f" (inherited from \'{rule.service.qualified_name}\')")
+                _map_rule(sio, rule, service_name)
                 sio.write('\n')
             await matcher.send(sio.getvalue().strip())
     else:

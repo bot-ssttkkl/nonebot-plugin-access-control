@@ -12,6 +12,7 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 from ..interface import IService
 from ..interface.rate_limit import IServiceRateLimit
 from ..rate_limit import RateLimitRule, RateLimitToken
+from ...errors import AccessControlValueError
 from ...event_bus import T_Listener, EventType, on_event, fire_event
 from ...models import RateLimitTokenOrm, RateLimitRuleOrm
 from ...utils.session import use_session_or_create
@@ -49,7 +50,7 @@ class ServiceRateLimitImpl(Generic[T_Service], IServiceRateLimit):
                 from ..methods import get_service_by_qualified_name
                 s = get_service_by_qualified_name(x.service)
             if s is not None:
-                yield RateLimitRule(x.id, s, x.subject, timedelta(seconds=x.time_span), x.limit)
+                yield RateLimitRule(x.id, s, x.subject, timedelta(seconds=x.time_span), x.limit, x.overwrite)
 
     async def get_rate_limit_rules_by_subject(
             self, *subject: str,
@@ -62,9 +63,13 @@ class ServiceRateLimitImpl(Generic[T_Service], IServiceRateLimit):
                     for node in self.service.trace():
                         async for p in self._get_rules_by_subject(node, sub, sess):
                             yield p
+                            if p.overwrite:
+                                return
                 else:
                     async for p in self._get_rules_by_subject(self.service, sub, sess):
                         yield p
+                        if p.overwrite:
+                            return
 
     async def get_rate_limit_rules(self, *, trace: bool = True,
                                    session: Optional[AsyncSession] = None) -> AsyncGenerator[RateLimitRule, None]:
@@ -112,19 +117,32 @@ class ServiceRateLimitImpl(Generic[T_Service], IServiceRateLimit):
                 "rule": rule
             })
 
-    async def add_rate_limit_rule(self, subject: str, time_span: timedelta, limit: int,
-                                  *, session: Optional[AsyncSession] = None):
+    async def add_rate_limit_rule(self, subject: str, time_span: timedelta, limit: int, overwrite: bool = False,
+                                  *, session: Optional[AsyncSession] = None) -> RateLimitRule:
         async with use_session_or_create(session) as sess:
+            if overwrite:
+                stmt = select(func.count()).where(
+                    RateLimitRuleOrm.subject == subject,
+                    RateLimitRuleOrm.service == self.service.qualified_name
+                )
+                cnt = (await sess.execute(stmt)).scalar_one()
+
+                if cnt > 0:
+                    raise AccessControlValueError('adding an overwrite rule with same subject and service '
+                                                  'that already used by other rules is forbidden')
+
             orm = RateLimitRuleOrm(subject=subject, service=self.service.qualified_name,
                                    time_span=int(time_span.total_seconds()),
-                                   limit=limit)
+                                   limit=limit, overwrite=overwrite)
             sess.add(orm)
             await sess.commit()
 
             await sess.refresh(orm)
 
-            rule = RateLimitRule(orm.id, self.service, subject, time_span, limit)
+            rule = RateLimitRule(orm.id, self.service, subject, time_span, limit, overwrite)
             await self._fire_service_add_rate_limit_rule(rule)
+
+            return rule
 
     @classmethod
     async def remove_rate_limit_rule(cls, rule_id: int,
@@ -145,7 +163,8 @@ class ServiceRateLimitImpl(Generic[T_Service], IServiceRateLimit):
             from ..methods import get_service_by_qualified_name
             service = get_service_by_qualified_name(orm.service)
 
-            rule = RateLimitRule(orm.id, service, orm.subject, timedelta(seconds=orm.time_span), orm.limit)
+            rule = RateLimitRule(orm.id, service, orm.subject, timedelta(seconds=orm.time_span), orm.limit,
+                                 orm.overwrite)
             await cls._fire_service_remove_rate_limit_rule(rule)
 
             return True
@@ -200,6 +219,9 @@ class ServiceRateLimitImpl(Generic[T_Service], IServiceRateLimit):
                         logger.trace(f"[rate limit] token retired for rule {rule.id} "
                                      f"(service: {rule.service}, subject: {rule.subject})")
                     return False
+
+                if rule.overwrite:
+                    break
 
             # 未设置rule
             return True
