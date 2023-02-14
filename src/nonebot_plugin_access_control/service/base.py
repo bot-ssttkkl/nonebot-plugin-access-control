@@ -52,22 +52,32 @@ class Service(Generic[T_ParentService, T_ChildService],
         from ..access_control import patch_matcher
         return patch_matcher(matcher, self)
 
-    async def check(self, bot: Bot, event: Event, acquire_rate_limit_token: bool = True) -> bool:
-        try:
-            await self.check_or_throw(bot, event, acquire_rate_limit_token)
-            return True
-        except AccessControlError:
-            return False
-
-    async def check_or_throw(self, bot: Bot, event: Event, acquire_rate_limit_token: bool = True):
+    async def check(self, bot: Bot, event: Event,
+                    *, acquire_rate_limit_token: bool = True,
+                    throw_on_fail: bool = False) -> bool:
         subjects = extract_subjects(bot, event)
+        return await self.check_by_subject(*subjects,
+                                           acquire_rate_limit_token=acquire_rate_limit_token,
+                                           throw_on_fail=throw_on_fail)
+
+    async def check_by_subject(self, *subjects: str,
+                               acquire_rate_limit_token: bool = True,
+                               throw_on_fail: bool = False) -> bool:
+        if not throw_on_fail:
+            try:
+                await self.check_by_subject(*subjects,
+                                            acquire_rate_limit_token=acquire_rate_limit_token,
+                                            throw_on_fail=True)
+                return True
+            except AccessControlError:
+                return False
+
         allow = await self.check_permission(*subjects)
         if not allow:
             raise PermissionDeniedError()
 
         if acquire_rate_limit_token:
-            adapter_name = bot.adapter.get_name().split(maxsplit=1)[0].lower()
-            user_id = f"{adapter_name}:{event.get_user_id()}"
+            user_id = subjects[0]
             allow = await self.acquire_token_for_rate_limit(*subjects, user=user_id)
 
             if not allow:

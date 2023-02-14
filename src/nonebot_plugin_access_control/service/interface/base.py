@@ -46,9 +46,13 @@ class IServiceBase(Generic[T_Service, T_ParentService, T_ChildService], ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    async def check(self, bot: Bot, event: Event, acquire_rate_limit_token: bool = True) -> bool:
+    async def check(self, bot: Bot, event: Event,
+                    *, acquire_rate_limit_token: bool = True,
+                    throw_on_fail: bool = False) -> bool:
         raise NotImplementedError()
 
     @abstractmethod
-    async def check_or_throw(self, bot: Bot, event: Event, acquire_rate_limit_token: bool = True):
+    async def check_by_subject(self, *subjects: str,
+                               acquire_rate_limit_token: bool = True,
+                               throw_on_fail: bool = False) -> bool:
         raise NotImplementedError()

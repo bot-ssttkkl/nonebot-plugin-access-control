@@ -27,7 +27,7 @@ async def check(matcher: Matcher, bot: Bot, event: Event):
         return
 
     try:
-        await service.check_or_throw(bot, event)
+        await service.check(bot, event, throw_on_fail=True)
     except PermissionDeniedError:
         if conf.access_control_reply_on_permission_denied:
             await matcher.send(conf.access_control_reply_on_permission_denied)

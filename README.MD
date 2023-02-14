@@ -26,9 +26,13 @@ _✨ Nonebot 权限控制 ✨_
 
 ## 特点
 
-- [x] 支持**功能级别**的细粒度权限控制
-- [x] 对未适配插件也支持**插件级别**的权限控制
-- [x] 支持对权限开关等事件进行订阅
+- 功能
+    - [x] 支持针对用户/群组的权限开关
+    - [x] 支持限制同一用户在一定时间内的指令调用次数
+    - [x] 对未适配插件提供**插件级别**的控制支持
+- 插件适配
+    - [x] 支持**功能级别**的细粒度控制
+    - [x] 支持对权限开关等事件进行订阅
 
 ## 使用
 
@@ -79,15 +83,31 @@ _✨ Nonebot 权限控制 ✨_
 
 ### 指令
 
-进行权限开关的指令为`/ac`，仅超级用户可用。（通过在配置文件中设置`SUPERUSERS`变量可设置超级用户）
+进行控制的指令为`/ac`，仅超级用户可用。（通过在配置文件中设置`SUPERUSERS`变量可设置超级用户）
 
-- `/ac ls`：列出所有权限配置
-- `/ac subject <主体> allow service <服务>`：为主体启用服务
-- `/ac subject <主体> deny service <服务>`：为主体禁用服务
-- `/ac subject <主体> rm service <服务>`：为主体删除服务权限配置
-- `/ac subject <主体> ls service`：列出主体已配置的服务权限
-- `/ac service <服务> ls`：列出服务的子服务层级
-- `/ac service <服务> ls subject`：列出服务已配置的主体权限
+（注意：0.3.0版本对指令进行了一次大的更改）
+
+- 帮助
+    - /ac help：显示此帮助
+- 权限控制
+    - /ac permission allow --sbj <主体> --srv <服务>：为主体启用服务
+    - /ac permission deny --sbj <主体> --srv <服务>：为主体禁用服务
+    - /ac permission rm --sbj <主体> --srv <服务>：为主体删除服务权限配置
+    - /ac permission ls：列出所有已配置的权限
+    - /ac permission ls --sbj <主体>：列出主体已配置的服务权限
+    - /ac permission ls --srv <服务>：列出服务已配置的主体权限
+    - /ac permission ls --sbj <主体> --srv <服务>：列出主体与服务已配置的权限
+- 流量限制
+    - /ac limit add --sbj <主体> --srv <服务> --limit <次数> --span <时间间隔>：为主体与服务添加限流规则（按照用户限流）
+    - /ac limit rm <规则ID>：删除限流规则
+    - /ac limit ls：列出所有已配置的限流规则
+    - /ac limit ls --sbj <主体>：列出主体已配置的限流规则
+    - /ac limit ls --srv <服务>：列出服务已配置的限流规则
+    - /ac limit ls --sbj <主体> --srv <服务>：列出主体与服务已配置的限流规则
+    - /ac limit reset：重置限流计数
+- 服务查看
+    - /ac service ls：列出所有服务与子服务层级
+    - /ac service ls --srv <服务>：列出服务的子服务层级
 
 其中`<服务>`的格式如下：
 
@@ -98,6 +118,7 @@ _✨ Nonebot 权限控制 ✨_
 ### 示例
 
 首先编辑配置文件，打开对未适配插件的支持：
+
 ```
 ACCESS_CONTROL_AUTO_PATCH_ENABLED=true
 ```
@@ -160,23 +181,26 @@ a_matcher = on_command('a')
 a_service = group1.create_subservice('a')
 a_service.patch_matcher(a_matcher)
 
+
 @a_matcher.handle()
 async def _(matcher: Matcher):
     await matcher.send("a")
 
-    
+
 b_matcher = on_command('b')
 b_service = group1.create_subservice('b')
 b_service.patch_matcher(b_matcher)
+
 
 @b_matcher.handle()
 async def _(matcher: Matcher):
     await matcher.send("b")
 
-    
+
 c_matcher = on_command('c')
 c_service = plugin_service.create_subservice('c')
 c_service.patch_matcher(c_matcher)
+
 
 @c_matcher.handle()
 async def _(matcher: Matcher):
@@ -213,7 +237,7 @@ async def _(matcher: Matcher):
 对于非Matcher的功能入口（如APScheduler的定时任务等），需要开发者手动进行鉴权。
 
 - 方法一：调用`service.check(Bot, Event)`方法，传入Bot及Event实例，返回bool值表示该用户是否具有权限
-- 方法二：调用`service.get_permission(*str)`方法，传入主体字符串，返回bool值表示该用户是否具有权限
+- 方法二：调用`service.check_by_subject(*str)`方法，传入主体字符串，返回bool值表示该用户是否具有权限
 
 APScheduler示例：[src/nonebot_plugin_ac_demo/apscheduler_demo.py](src/nonebot_plugin_ac_demo/apscheduler_demo.py)
 
@@ -221,11 +245,11 @@ APScheduler示例：[src/nonebot_plugin_ac_demo/apscheduler_demo.py](src/nonebot
 
 通过`service.on_set_permission`、`service.on_remove_permission`、`service.on_change_permission`方法可以订阅事件，具体如下表：
 
-| 装饰器                            | 事件类型                                  | 事件接收函数的参数                                 |
-|--------------------------------|---------------------------------------|-------------------------------------------|
-| `service.on_set_permission`    | 服务设置主体权限                              | service：服务<br>subject：主体<br>allow：是否为允许权限 |
-| `service.on_remove_permission` | 服务删除主体权限                              | service：服务<br>subject：主体                  |
-| `service.on_change_permission` | 服务变更主体权限（包括该服务及其所有祖先服务设置、删除权限导致的权限变更） | service：服务<br>subject：主体<br>allow：是否为允许权限 |
+| 装饰器                            | 事件类型                                  | 事件接收函数的参数                   |
+|--------------------------------|---------------------------------------|-----------------------------|
+| `service.on_set_permission`    | 服务设置主体权限                              | service：服务<br>permission：权限 |
+| `service.on_remove_permission` | 服务删除主体权限                              | service：服务<br>subject：主体    |
+| `service.on_change_permission` | 服务变更主体权限（包括该服务及其所有祖先服务设置、删除权限导致的权限变更） | service：服务<br>permission：权限 |
 
 **调用事件接收函数时通过具名参数传参，因此事件接收函数的参数必须严格遵循参数名。**
 
@@ -261,11 +285,26 @@ APScheduler示例：[src/nonebot_plugin_ac_demo/apscheduler_demo.py](src/nonebot
 
 默认值：`[]`
 
+### access_control_reply_on_permission_denied
+
+因无权限而拒绝执行时向用户回复的消息（None则不回复）
+
+默认值：`None`
+
+### access_control_reply_on_rate_limited
+
+因到达最大次数而拒绝执行时向用户回复的消息（None则不回复）
+
+默认值：`None`
+
 ## Q&A
 
-### **本插件与[nonebot_plugin_rauthman](https://github.com/Lancercmd/nonebot_plugin_rauthman)和[nonebot-plugin-manager](https://github.com/nonepkg/nonebot-plugin-manager)等其他权限管理插件有什么差别？**
+### **本插件与[nonebot_plugin_rauthman](https://github.com/Lancercmd/nonebot_plugin_rauthman)
+和[nonebot-plugin-manager](https://github.com/nonepkg/nonebot-plugin-manager)等其他权限管理插件有什么差别？**
 
-[nonebot_plugin_rauthman](https://github.com/Lancercmd/nonebot_plugin_rauthman)支持功能级别的细粒度权限控制，但是需要插件进行适配，对于未适配插件不起作用。[nonebot-plugin-manager](https://github.com/nonepkg/nonebot-plugin-manager)则实现了非侵入式的权限控制。
+[nonebot_plugin_rauthman](https://github.com/Lancercmd/nonebot_plugin_rauthman)
+支持功能级别的细粒度权限控制，但是需要插件进行适配，对于未适配插件不起作用。[nonebot-plugin-manager](https://github.com/nonepkg/nonebot-plugin-manager)
+则实现了非侵入式的权限控制。
 
 本插件主要受这两个插件的启发，结合了这两个插件的优点。既支持非侵入式应用到原有插件，也支持对插件进行适配以获得更多feature。同时提供事件订阅机制，以便插件开发者更灵活处理权限。
 
