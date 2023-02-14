@@ -57,6 +57,8 @@ async def _(matcher: Matcher, state: T_State):
             await handle_limit_rm(matcher, args.id)
         elif args.action == 'ls':
             await handle_limit_ls(matcher, args.subject, args.service)
+        elif args.action == 'reset':
+            await handle_limit_reset(matcher)
     elif args.subcommand == 'service':
         if args.action == 'ls':
             await handle_service_ls(matcher, args.service)
@@ -79,6 +81,7 @@ help_text = """
 /ac limit ls --sbj <主体>：列出主体已配置的限流规则
 /ac limit ls --srv <服务>：列出服务已配置的限流规则
 /ac limit ls --sbj <主体> --srv <服务>：列出主体与服务已配置的限流规则
+/ac limit reset：重置限流计数
 
 /ac service ls：列出所有服务与子服务层级
 /ac service ls --srv <服务>：列出服务的子服务层级
@@ -215,6 +218,11 @@ async def handle_limit_ls(matcher: Matcher, subject: Optional[str], service_name
             await matcher.send(sio.getvalue().strip())
     else:
         await matcher.send("empty")
+
+
+async def handle_limit_reset(matcher: Matcher):
+    await Service.clear_rate_limit_tokens()
+    await matcher.send("ok")
 
 
 async def handle_service_ls(matcher: Matcher, service_name: Optional[str]):

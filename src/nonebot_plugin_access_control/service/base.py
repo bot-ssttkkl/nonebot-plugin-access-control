@@ -129,3 +129,7 @@ class Service(Generic[T_ParentService, T_ChildService],
 
     async def acquire_token_for_rate_limit(self, *subject: str, user: str) -> bool:
         return await self._rate_limit_impl.acquire_token_for_rate_limit(*subject, user=user)
+
+    @classmethod
+    async def clear_rate_limit_tokens(cls):
+        return await ServiceRateLimitImpl.clear_rate_limit_tokens()

@@ -36,3 +36,8 @@ class IServiceRateLimit(ABC):
     @abstractmethod
     async def acquire_token_for_rate_limit(self, *subject: str, user: str) -> bool:
         ...
+
+    @classmethod
+    @abstractmethod
+    async def clear_rate_limit_tokens(cls):
+        ...

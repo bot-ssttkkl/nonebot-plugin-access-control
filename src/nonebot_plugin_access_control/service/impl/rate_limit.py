@@ -164,6 +164,14 @@ class ServiceRateLimitImpl(Generic[T_Service], IServiceRateLimit):
             # 未设置rule
             return True
 
+    @classmethod
+    async def clear_rate_limit_tokens(cls, *, session: Optional[AsyncSession] = None):
+        async with use_session_or_create(session) as sess:
+            stmt = delete(RateLimitTokenOrm)
+            result = await sess.execute(stmt)
+            await sess.commit()
+            logger.trace(f"deleted {result.rowcount} rate limit token(s)")
+
 
 require('nonebot_plugin_apscheduler')
 from nonebot_plugin_apscheduler import scheduler

@@ -43,6 +43,8 @@ limit_ls_parser = limit_subparsers.add_parser("ls", help="列出已配置的限�
 limit_ls_parser.add_argument("--sbj", "--subject", help="主体", dest="subject")
 limit_ls_parser.add_argument("--srv", "--service", help="服务", dest="service")
 
+limit_reset_parser = limit_subparsers.add_parser("reset", help="重置限流计数")
+
 # ==== service ====
 service_parser = subparsers.add_parser("service", help="服务")
 service_subparsers = service_parser.add_subparsers(help="操作", dest="action", required=True)
