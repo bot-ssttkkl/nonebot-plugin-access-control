@@ -238,15 +238,19 @@ from nonebot_plugin_apscheduler import scheduler
 async def _delete_outdated_tokens():
     async with AsyncSession(get_engine()) as session:
         now = datetime.utcnow()
-        rowcount = 0
+        stmts = []
         async for rule in await session.stream_scalars(select(RateLimitRuleOrm)):
             stmt = (delete(RateLimitTokenOrm)
                     .where(RateLimitTokenOrm.rule_id == rule.id,
                            RateLimitTokenOrm.acquire_time < now + timedelta(seconds=rule.time_span))
                     .execution_options(synchronize_session=False))
-            result = await session.execute(stmt)
-            await session.commit()
+            stmts.append(stmt)
 
+        rowcount = 0
+        for stmt in stmts:
+            result = await session.execute(stmt)
             rowcount += result.rowcount
+
+        await session.commit()
 
         logger.debug(f"deleted {rowcount} outdated rate limit token(s)")
