@@ -191,7 +191,7 @@ class ServiceRateLimitImpl(Generic[T_Service], IServiceRateLimit):
     @staticmethod
     async def _retire_token(token: RateLimitToken, *, session: Optional[AsyncSession] = None):
         async with use_session_or_create(session) as sess:
-            stmt = delete(RateLimitRuleOrm).where(RateLimitRuleOrm.id == token.id)
+            stmt = delete(RateLimitTokenOrm).where(RateLimitTokenOrm.id == token.id)
             await sess.execute(stmt)
             await sess.commit()
 
@@ -241,7 +241,8 @@ async def _delete_outdated_tokens():
         rowcount = 0
         async for rule in await session.stream_scalars(select(RateLimitRuleOrm)):
             stmt = (delete(RateLimitTokenOrm)
-                    .where(RateLimitTokenOrm.acquire_time < now + timedelta(seconds=rule.time_span))
+                    .where(RateLimitTokenOrm.rule_id == rule.id,
+                           RateLimitTokenOrm.acquire_time < now + timedelta(seconds=rule.time_span))
                     .execution_options(synchronize_session=False))
             result = await session.execute(stmt)
             await session.commit()
