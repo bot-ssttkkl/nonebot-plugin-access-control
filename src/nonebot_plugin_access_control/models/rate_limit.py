@@ -3,7 +3,9 @@ from typing import Optional, List
 
 from shortuuid import ShortUUID
 from sqlalchemy import Index
-from sqlmodel import SQLModel, Field, Relationship
+from sqlmodel import Field, Relationship
+
+from nonebot_plugin_access_control.plugin_data import PluginModel
 
 _shortuuid = ShortUUID(alphabet="23456789abcdefghijkmnopqrstuvwxyz")
 
@@ -12,7 +14,7 @@ def _gen_id():
     return _shortuuid.random(length=5)
 
 
-class RateLimitRuleOrm(SQLModel, table=True):
+class RateLimitRuleOrm(PluginModel, table=True):
     __tablename__ = 'nonebot_plugin_access_control_rate_limit_rule'
     __table_args__ = (
         Index("ix_nonebot_plugin_access_control_rate_limit_rule_subject_service", "subject", "service"),
@@ -32,7 +34,7 @@ class RateLimitRuleOrm(SQLModel, table=True):
                                                      sa_relationship_kwargs={"cascade": "delete"})
 
 
-class RateLimitTokenOrm(SQLModel, table=True):
+class RateLimitTokenOrm(PluginModel, table=True):
     __tablename__ = 'nonebot_plugin_access_control_rate_limit_token'
     __table_args__ = {"extend_existing": True}
 
