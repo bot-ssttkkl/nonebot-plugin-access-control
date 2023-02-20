@@ -2,9 +2,9 @@ from typing import Set, List
 
 from nonebot import get_driver
 from nonebot.adapters.onebot.v12 import Bot, Event
-from nonebot.permission import SuperUser
 
 from nonebot_plugin_access_control.subject import SubjectExtractor
+from nonebot_plugin_access_control.utils.superuser import is_superuser
 
 
 class OneBotV12SubjectExtractor(SubjectExtractor[Bot, Event]):
@@ -37,7 +37,7 @@ class OneBotV12SubjectExtractor(SubjectExtractor[Bot, Event]):
         if user_id is not None:
             li.append(f"{bot.platform}:{user_id}")
             li.append(f"onebot:{user_id}")
-            if await SuperUser()(bot, event):
+            if is_superuser(bot, event):
                 li.append("superuser")
 
         if group_id is not None:
