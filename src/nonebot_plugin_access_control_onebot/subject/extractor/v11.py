@@ -25,7 +25,7 @@ class OneBotV11SubjectExtractor(SubjectExtractor[Bot, Event]):
             li.append(f"qq:{user_id}")
             li.append(f"onebot:{user_id}")
 
-            if SuperUser()(bot, event):
+            if await SuperUser()(bot, event):
                 li.append("superuser")
 
         group_id = getattr(event, "group_id", None)

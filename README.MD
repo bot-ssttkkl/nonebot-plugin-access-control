@@ -40,19 +40,27 @@ _✨ Nonebot 权限控制 ✨_
 
 #### 概念
 
-让我们从一个例子引入：QQ上群组G的用户U发送了一条消息，该用户同时具有“用户U”、“群组G成员”、“QQ用户”、“Bot用户”这几个身份。同时QQ上群组G的用户V也发送了一条消息，该用户该用户同时具有“用户V”、“群组G成员”、“QQ用户”、“Bot用户”这几个身份。
+当我们对用户进行权限控制时，我们想要的是针对拥有某种同样身份的所有用户进行配置，而不是对每一个具体用户分别配置。因此，我们引入主体的概念。 **主体（Subject）代表了拥有某种同样身份的用户的集合，也是设置权限的基本单位。** 当我们说用户具有某个主体，也就是说用户在该主体所代表的集合内。换句话说，主体就是一个用户所具有的身份。
 
-如果我们希望对用户进行权限控制，我们可以直接针对“用户U”、“用户V”这个级别分别配置权限。但我们希望对群组进行权限控制时，对群组内的每一个用户都分别配置权限，就有点力不从心了。我们希望能够直接针对“群组G”这个级别进行配置，而无需关心群组内都有什么成员。
-
-我们定义**主体（Subject）为用户所具有的身份，也是设置权限的基本单位。**
-
-一个用户通常拥有多个主体。回到上面的例子，第一位用户拥有“用户U”、“群组G成员”、“QQ用户”、“Bot用户”这四个主体；第二位用户拥有“用户V”、“群组G成员”、“QQ用户”、“Bot用户”这四个主体。用户拥有的所有主体，按照规模从小到大排序，呈现如下图的逐层包含关系：
+一个用户通常拥有多个主体。举个例子：QQ上群组G的用户U发送了一条消息，该用户同时具有“用户U”、“群组G成员”、“QQ用户”、“Bot用户”这几个主体。同时QQ上群组G的用户V也发送了一条消息，该用户该用户同时具有“用户V”、“群组G成员”、“QQ用户”、“Bot用户”这几个主体。用户拥有的所有主体，按照规模从小到大排序，呈现如下图的逐层包含关系：
 
 ![](docs/img/1.svg)
 
-当设置权限时，我们直接针对一个主体进行设置。当鉴权时，我们对用户的所有主体按规模从小到大的顺序（下文将此顺序称为优先级顺序），逐一检查是否设置了权限。一旦检查到某个主体设置了权限，就以该主体设置的权限作为该用户的权限。
+当设置权限时，我们直接针对一个主体进行设置。当鉴权时，我们对用户的所有主体按优先级从高到低的顺序，逐一检查是否设置了权限。一旦检查到某个主体设置了权限，就以该主体设置的权限作为该用户的权限。
 
 回到上面的例子，假设我们对主体”群组G“禁用服务，但是对主体”用户V“启用服务。则用户U在群组G内将无法使用服务，但是用户V在群组G内可以使用。
+
+在插件使用中，我们用一个字符串表示主体，例如`qq:12345678`表示QQ用户12345678、`qq:g87654321`表示QQ群组87654321。
+
+我们约定，`all`表示所有用户，`<平台名>`表示所有此平台的用户，除此之外的所有主体均以`<平台名>:`开头。
+
+各适配器的主体定义如下：
+
+- [OneBot V11](docs/onebot_v11.md)
+- [OneBot V12](docs/onebot_v12.md)
+- [Kaiheila](docs/kaiheila.md)
+
+如果你能帮助我们进行其他协议适配，欢迎提交PR。
 
 ### 服务
 
@@ -78,19 +86,6 @@ _✨ Nonebot 权限控制 ✨_
 
 ### 鉴权
 
-在插件使用中，我们用一个字符串表示主体。并且我们约定，`all`表示所有用户，`<协议名>`表示所有此协议的用户，除此之外的所有主体均以`<协议名>:`开头。
-
-在OneBot协议中，每个用户所拥有的主体如下表所定义：
-
-| 主体                 | 含义       | 示例               | 必定存在             |
-|--------------------|----------|------------------|------------------|
-| onebot:<user_id>   | 用户       | onebot:12345678  | 是                |
-| onebot:g<group_id> | 群组       | onebot:g87654321 | 仅当消息来自群组或临时会话时存在 |
-| onebot             | OneBot用户 | onebot           | 是                |
-| all                | 所有用户     | all              | 是                |
-
-目前仅实现了OneBot协议。如果你能帮助我们进行其他协议适配，欢迎提交PR。
-
 通过指令可实现权限开关：
 - `/ac permission allow --sbj <主体> --srv <服务>`：为主体启用服务
 - `/ac permission deny --sbj <主体> --srv <服务>`：为主体禁用服务
@@ -108,7 +103,7 @@ _✨ Nonebot 权限控制 ✨_
 
 限流规则同样是针对服务及主体的。与鉴权不同的是，限流规则是串联的。应用在一个用户拥有的所有主体的限流规则，与应用在一个服务及其所有祖先服务的限流规则，会同时对用户产生限制。
 
-举个例子，如果我们设置了”主体`all`每天最多调用100次`nonebot`服务“，”主体`onebot:g87654321`每分钟最多调用5次`nonebot_plugin_pixivbot`服务“。一位拥有`onebot:12345678`、`onebot:g87654321`、`onebot`、`all`这四个主体的用户尝试调用`nonebot_plugin_pixivbot.xxx`服务时，将同时受到以上两条规则的限制。
+举个例子，如果我们设置了”主体`all`每天最多调用100次`nonebot`服务“，”主体`qq:g87654321`每分钟最多调用5次`nonebot_plugin_pixivbot`服务“。一位拥有`qq:12345678`、`qq:g87654321`、`qq`、`all`这四个主体的用户尝试调用`nonebot_plugin_pixivbot.xxx`服务时，将同时受到以上两条规则的限制。
 
 如果我不希望这样的串联，该怎么办？通过为规则设置”覆写“属性，可以覆盖掉所有优先级低于该规则的规则。规则的优先级比较规则如下：
 
@@ -176,23 +171,23 @@ nonebot.load_builtin_plugins("echo")
 
 #### 鉴权
 
-执行下面的指令后，用户12345678将无法调用指令`/echo`
+执行下面的指令后，QQ用户12345678将无法调用指令`/echo`
 
 ```
-/ac permission deny --sbj onebot:12345678 --srv echo
+/ac permission deny --sbj qq:12345678 --srv echo
 ```
 
-执行下面的指令后，用户12345678将无法调用所有指令
+执行下面的指令后，QQ用户12345678将无法调用所有指令
 
 ```
 /ac permission deny --sbj all --srv nonebot
 ```
 
-执行下面的指令后，群组87654321的所有用户（用户12345678除外）将无法调用指令`/echo`
+执行下面的指令后，QQ群组87654321的所有用户（QQ用户12345678除外）将无法调用指令`/echo`
 
 ```
-/ac permission allow --sbj onebot:12345678 --srv echo
-/ac permission deny --sbj onebot:g87654321 --srv echo
+/ac permission allow --sbj qq:12345678 --srv echo
+/ac permission deny --sbj qq:g87654321 --srv echo
 ```
 
 执行下面的指令后，所有用户将无法调用指令`/echo`
@@ -210,13 +205,13 @@ nonebot.load_builtin_plugins("echo")
 /ac limit add --sbj all --srv echo --span 1m --limit 3
 ```
 
-执行下面的指令后，群组87654321的所有用户（用户12345678除外）每分钟只能调用三次指令`/echo`
+执行下面的指令后，QQ群组87654321的所有用户（QQ用户12345678除外）每分钟只能调用三次指令`/echo`
 
-（用户12345678每分钟能够调用114514次指令`/echo`）
+（QQ用户12345678每分钟能够调用114514次指令`/echo`）
 
 ```
-/ac limit add --sbj onebot:g87654321 --srv echo --span 1m --limit 3
-/ac limit add --sbj onebot:12345678 --srv echo --span 1m --limit 114514 --overwrite
+/ac limit add --sbj qq:g87654321 --srv echo --span 1m --limit 3
+/ac limit add --sbj qq:12345678 --srv echo --span 1m --limit 114514 --overwrite
 ```
 
 ## 插件适配
@@ -284,17 +279,17 @@ async def _(matcher: Matcher):
 /ac permission deny --sbj all --srv nonebot_plugin_ac_demo.group1
 ```
 
-执行下面的指令后，用户12345678将无法调用指令`/a`
+执行下面的指令后，QQ用户12345678将无法调用指令`/a`
 
 ```
-/ac permission deny --sbj onebot:12345678 --srv nonebot_plugin_ac_demo.group1.a
+/ac permission deny --sbj qq:12345678 --srv nonebot_plugin_ac_demo.group1.a
 ```
 
-执行下面的指令后，群组87654321的所有用户将无法调用除`/c`以外的任何指令
+执行下面的指令后，QQ群组87654321的所有用户将无法调用除`/c`以外的任何指令
 
 ```
-/ac permission deny --sbj onebot:g87654321 --srv nonebot_plugin_ac_demo
-/ac permission allow --sbj onebot:g87654321 --srv nonebot_plugin_ac_demo.c
+/ac permission deny --sbj qq:g87654321 --srv nonebot_plugin_ac_demo
+/ac permission allow --sbj qq:g87654321 --srv nonebot_plugin_ac_demo.c
 ```
 
 5. 手动鉴权

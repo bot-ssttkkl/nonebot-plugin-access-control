@@ -1,4 +1,5 @@
 from nonebot.adapters.kaiheila import Bot, Event
+from nonebot.permission import SuperUser
 
 from nonebot_plugin_access_control.subject import SubjectExtractor
 
@@ -19,6 +20,8 @@ class KaiheilaSubjectExtractor(SubjectExtractor[Bot, Event]):
         user_id = getattr(event, "user_id", None)
         if user_id is not None:
             li.append(f"kaiheila:{user_id}")
+            if await SuperUser()(bot, event):
+                li.append("superuser")
 
         channel_id = getattr(event, "group_id", None)
         if channel_id is not None:
