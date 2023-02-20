@@ -1,13 +1,19 @@
-from nonebot import logger
+from nonebot.adapters.kaiheila import Bot, Event
 
-from .extractor import register_subject_extractor
-
-try:
-    from nonebot.adapters.kaiheila import Bot, Event
-    from nonebot.adapters.kaiheila.adapter import Adapter
+from nonebot_plugin_access_control.subject import SubjectExtractor
 
 
-    def kaiheila_subject_extractor(bot: Bot, event: Event):
+class KaiheilaSubjectExtractor(SubjectExtractor[Bot, Event]):
+    def get_adapter_shortname(self) -> str:
+        return 'kaiheila'
+
+    def get_adapter_fullname(self) -> str:
+        return 'Kaiheila'
+
+    def is_platform_supported(self, platform: str) -> bool:
+        return platform == 'kaiheila'
+
+    def extract(self, bot: Bot, event: Event):
         li = []
 
         user_id = getattr(event, "user_id", None)
@@ -25,9 +31,3 @@ try:
         li.append("all")
 
         return li
-
-
-    register_subject_extractor(Adapter.get_name(), kaiheila_subject_extractor)
-    logger.trace(f"registered subject extractor for {Adapter.get_name()}")
-except ImportError:
-    pass

@@ -1,0 +1,5 @@
+from nonebot_plugin_access_control.subject import union_subject_extractor
+from nonebot_plugin_access_control_onebot.subject.extractor import OneBotV11SubjectExtractor, OneBotV12SubjectExtractor
+
+union_subject_extractor.register(OneBotV11SubjectExtractor())
+union_subject_extractor.register(OneBotV12SubjectExtractor())

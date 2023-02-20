@@ -1,0 +1,4 @@
+from nonebot_plugin_access_control.subject import union_subject_extractor
+from nonebot_plugin_access_control_kaiheila.subject.extractor import KaiheilaSubjectExtractor
+
+union_subject_extractor.register(KaiheilaSubjectExtractor())
