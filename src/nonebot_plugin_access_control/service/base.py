@@ -13,7 +13,7 @@ from .permission import Permission
 from .rate_limit import RateLimitRule
 from ..errors import AccessControlError, PermissionDeniedError, RateLimitedError
 from ..event_bus import T_Listener
-from ..subject import union_subject_extractor
+from ..subject import extract_subjects
 
 T_ParentService = TypeVar('T_ParentService', bound=Optional["Service"], covariant=True)
 T_ChildService = TypeVar('T_ChildService', bound="Service", covariant=True)
@@ -55,7 +55,7 @@ class Service(Generic[T_ParentService, T_ChildService],
     async def check(self, bot: Bot, event: Event,
                     *, acquire_rate_limit_token: bool = True,
                     throw_on_fail: bool = False) -> bool:
-        subjects = union_subject_extractor.extract(bot, event)
+        subjects = extract_subjects(bot, event)
         return await self.check_by_subject(*subjects,
                                            acquire_rate_limit_token=acquire_rate_limit_token,
                                            throw_on_fail=throw_on_fail)
