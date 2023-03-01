@@ -36,12 +36,12 @@ class OneBotV11SubjectExtractor(SubjectExtractor[Bot, Event]):
             sender: Optional[Sender] = getattr(event, "sender", None)
             if sender is not None:
                 if sender.role == 'owner':
-                    li.append(f"qq:group_owner")
                     li.append(f"qq:g{group_id}.group_owner")
+                    li.append(f"qq:group_owner")
 
                 if sender.role == 'owner' or sender.role == 'admin':
-                    li.append(f"qq:group_admin")
                     li.append(f"qq:g{group_id}.group_admin")
+                    li.append(f"qq:group_admin")
 
         if isinstance(event, GroupMessageEvent):
             li.append("qq:group")
