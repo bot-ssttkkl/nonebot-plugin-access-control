@@ -1,7 +1,7 @@
 from typing import Optional
 
 from nonebot.adapters.onebot.v11 import Bot, Event
-from nonebot.adapters.onebot.v11.event import Sender
+from nonebot.adapters.onebot.v11.event import Sender, GroupMessageEvent, PrivateMessageEvent
 
 from nonebot_plugin_access_control.subject import SubjectExtractor
 from nonebot_plugin_access_control.utils.superuser import is_superuser
@@ -42,6 +42,13 @@ class OneBotV11SubjectExtractor(SubjectExtractor[Bot, Event]):
                 if sender.role == 'owner' or sender.role == 'admin':
                     li.append(f"qq:group_admin")
                     li.append(f"qq:g{group_id}.group_admin")
+
+        if isinstance(event, GroupMessageEvent):
+            li.append("qq:group")
+            li.append("onebot:group")
+        elif isinstance(event, PrivateMessageEvent):
+            li.append("qq:private")
+            li.append("onebot:private")
 
         li.append("qq")
         li.append("onebot")

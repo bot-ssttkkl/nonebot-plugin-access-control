@@ -1,7 +1,7 @@
 from typing import Set, List
 
 from nonebot import get_driver
-from nonebot.adapters.onebot.v12 import Bot, Event
+from nonebot.adapters.onebot.v12 import Bot, Event, GroupMessageEvent, PrivateMessageEvent, ChannelMessageEvent
 
 from nonebot_plugin_access_control.subject import SubjectExtractor
 from nonebot_plugin_access_control.utils.superuser import is_superuser
@@ -51,6 +51,16 @@ class OneBotV12SubjectExtractor(SubjectExtractor[Bot, Event]):
         if guild_id is not None:
             li.append(f"{bot.platform}:g{guild_id}")
             li.append(f"onebot:g{guild_id}")
+
+        if isinstance(event, GroupMessageEvent):
+            li.append(f"{bot.platform}:group")
+            li.append("onebot:group")
+        elif isinstance(event, ChannelMessageEvent):
+            li.append(f"{bot.platform}:channel")
+            li.append("onebot:channel")
+        elif isinstance(event, PrivateMessageEvent):
+            li.append(f"{bot.platform}:private")
+            li.append("onebot:private")
 
         li.append(f"{bot.platform}")
         li.append("onebot")
