@@ -2,7 +2,7 @@ from contextlib import asynccontextmanager
 from typing import Optional, AsyncContextManager
 
 from nonebot_plugin_datastore.db import get_engine
-from sqlmodel.ext.asyncio.session import AsyncSession
+from sqlalchemy.ext.asyncio import AsyncSession
 
 
 @asynccontextmanager

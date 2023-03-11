@@ -1,11 +1,11 @@
 from datetime import datetime
-from typing import Optional, List
+from typing import List
 
 from shortuuid import ShortUUID
-from sqlalchemy import Index
-from sqlmodel import Field, Relationship
+from sqlalchemy import Index, ForeignKey
+from sqlalchemy.orm import Mapped, mapped_column, relationship, MappedAsDataclass
 
-from nonebot_plugin_access_control.plugin_data import PluginModel
+from nonebot_plugin_access_control.plugin_data import plugin_data
 
 _shortuuid = ShortUUID(alphabet="23456789abcdefghijkmnopqrstuvwxyz")
 
@@ -14,7 +14,7 @@ def _gen_id():
     return _shortuuid.random(length=5)
 
 
-class RateLimitRuleOrm(PluginModel, table=True):
+class RateLimitRuleOrm(MappedAsDataclass, plugin_data.Model):
     __tablename__ = 'nonebot_plugin_access_control_rate_limit_rule'
     __table_args__ = (
         Index("ix_nonebot_plugin_access_control_rate_limit_rule_subject_service", "subject", "service"),
@@ -23,24 +23,24 @@ class RateLimitRuleOrm(PluginModel, table=True):
         }
     )
 
-    id: str = Field(default_factory=_gen_id, primary_key=True)
-    subject: str
-    service: str
-    time_span: int  # 单位：秒
-    limit: int
-    overwrite: bool
+    id: Mapped[str] = mapped_column(init=False, primary_key=True, default_factory=_gen_id)
+    subject: Mapped[str]
+    service: Mapped[str]
+    time_span: Mapped[int]  # 单位：秒
+    limit: Mapped[int]
+    overwrite: Mapped[bool]
 
-    tokens: List["RateLimitTokenOrm"] = Relationship(back_populates="rule",
-                                                     sa_relationship_kwargs={"cascade": "delete"})
+    tokens: Mapped[List["RateLimitTokenOrm"]] = relationship(init=False, back_populates="rule",
+                                                             cascade="delete")
 
 
-class RateLimitTokenOrm(PluginModel, table=True):
+class RateLimitTokenOrm(MappedAsDataclass, plugin_data.Model):
     __tablename__ = 'nonebot_plugin_access_control_rate_limit_token'
     __table_args__ = {"extend_existing": True}
 
-    id: Optional[int] = Field(default=None, primary_key=True)
-    rule_id: str = Field(foreign_key='nonebot_plugin_access_control_rate_limit_rule.id', index=True)
-    user: str
-    acquire_time: datetime = Field(default_factory=datetime.utcnow)
+    id: Mapped[int] = mapped_column(init=False, primary_key=True)
+    rule_id: Mapped[str] = mapped_column(ForeignKey('nonebot_plugin_access_control_rate_limit_rule.id'), index=True)
+    user: Mapped[str]
+    acquire_time: Mapped[datetime] = mapped_column(init=False, default_factory=datetime.utcnow)
 
-    rule: RateLimitRuleOrm = Relationship(back_populates="tokens")
+    rule: Mapped[RateLimitRuleOrm] = relationship(init=False, back_populates="tokens")

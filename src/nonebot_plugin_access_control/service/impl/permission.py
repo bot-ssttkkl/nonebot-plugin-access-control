@@ -40,9 +40,9 @@ class ServicePermissionImpl(Generic[T_Service], IServicePermission):
                                session: AsyncSession) -> AsyncGenerator[Permission, None]:
         stmt = select(PermissionOrm)
         if service is not None:
-            stmt.append_whereclause(PermissionOrm.service == service.qualified_name)
+            stmt = stmt.where(PermissionOrm.service == service.qualified_name)
         if subject is not None:
-            stmt.append_whereclause(PermissionOrm.subject == subject)
+            stmt = stmt.where(PermissionOrm.subject == subject)
 
         async for x in await session.stream_scalars(stmt):
             s = service

@@ -4,10 +4,9 @@ from typing import Optional
 
 from nonebot import require, logger
 from nonebot_plugin_datastore.db import get_engine
-from sqlalchemy import delete
+from sqlalchemy import delete, select
 from sqlalchemy import func
-from sqlmodel import select
-from sqlmodel.ext.asyncio.session import AsyncSession
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..interface import IService
 from ..interface.rate_limit import IServiceRateLimit
@@ -40,9 +39,9 @@ class ServiceRateLimitImpl(Generic[T_Service], IServiceRateLimit):
                                     session: AsyncSession) -> AsyncGenerator[RateLimitRule, None]:
         stmt = select(RateLimitRuleOrm)
         if service is not None:
-            stmt.append_whereclause(RateLimitRuleOrm.service == service.qualified_name)
+            stmt = stmt.where(RateLimitRuleOrm.service == service.qualified_name)
         if subject is not None:
-            stmt.append_whereclause(RateLimitRuleOrm.subject == subject)
+            stmt = stmt.where(RateLimitRuleOrm.subject == subject)
 
         async for x in await session.stream_scalars(stmt):
             s = service
