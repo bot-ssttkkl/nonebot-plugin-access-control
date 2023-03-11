@@ -135,23 +135,25 @@ async def handle_permission_ls(matcher: Matcher, subject: Optional[str], service
     if len(permissions) != 0:
         # 按照服务全称、先allow再deny、subject排序
         permissions = sorted(permissions, key=lambda x: (x.service.qualified_name, x.allow, x.subject))
-        with StringIO() as sio:
-            for p in permissions:
-                sio.write(f"\'{p.service.qualified_name}\'")
 
-                if p.allow:
-                    sio.write(" allow ")
-                else:
-                    sio.write(" deny ")
+        for i in range(0, len(permissions), 20):
+            j = min(i + 20, len(permissions))
+            with StringIO() as sio:
+                for p in permissions[i:j]:
+                    sio.write(f"\'{p.service.qualified_name}\'")
 
-                sio.write(f"\'{p.subject}\'")
-                if service_name is not None and p.service.qualified_name != service_name:
-                    sio.write(f" (inherited from \'{p.service.qualified_name}\')")
-                sio.write('\n')
-            msg = sio.getvalue().strip()
+                    if p.allow:
+                        sio.write(" allow ")
+                    else:
+                        sio.write(" deny ")
+
+                    sio.write(f"\'{p.subject}\'")
+                    if service_name is not None and p.service.qualified_name != service_name:
+                        sio.write(f" (inherited from \'{p.service.qualified_name}\')")
+                    sio.write('\n')
+                await matcher.send(sio.getvalue().strip())
     else:
-        msg = "empty"
-    await matcher.send(msg)
+        await matcher.send("empty")
 
 
 def _map_rule(sio: StringIO, rule: RateLimitRule, service_name: Optional[str]):
@@ -226,11 +228,13 @@ async def handle_limit_ls(matcher: Matcher, subject: Optional[str], service_name
         # 按照服务全称、subject排序
         rules = sorted(rules, key=lambda x: (x.service.qualified_name, x.subject, x.id))
 
-        with StringIO() as sio:
-            for rule in rules:
-                _map_rule(sio, rule, service_name)
-                sio.write('\n')
-            await matcher.send(sio.getvalue().strip())
+        for i in range(0, len(rules), 20):
+            j = min(i + 20, len(rules))
+            with StringIO() as sio:
+                for rule in rules[i:j]:
+                    _map_rule(sio, rule, service_name)
+                    sio.write('\n')
+                await matcher.send(sio.getvalue().strip())
     else:
         await matcher.send("empty")
 
@@ -245,4 +249,13 @@ async def handle_service_ls(matcher: Matcher, service_name: Optional[str]):
         service_name = 'nonebot'
     service = await _get_service(matcher, service_name)
     summary = get_tree_summary(service, lambda x: x.children, lambda x: x.name)
-    await matcher.send(summary)
+
+    summary = summary.split('\n')
+
+    for i in range(0, len(summary), 20):
+        j = min(i + 20, len(summary))
+        with StringIO() as sio:
+            for s in summary[i:j]:
+                sio.write(s)
+                sio.write('\n')
+            await matcher.send(sio.getvalue().strip())
