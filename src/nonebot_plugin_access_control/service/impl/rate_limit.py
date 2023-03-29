@@ -199,7 +199,9 @@ class ServiceRateLimitImpl(Generic[T_Service], IServiceRateLimit):
         async with use_session_or_create(session) as sess:
             tokens = []
 
-            async for rule in self.get_rate_limit_rules_by_subject(*subject, session=sess):
+            # 先获取所有rule，再对每个rule获取token
+            rules = [x async for x in self.get_rate_limit_rules_by_subject(*subject, session=sess)]
+            for rule in rules:
                 token = await self._acquire_token(rule, user, session=sess)
                 if token is not None:
                     logger.trace(f"[rate limit] token acquired for rule {rule.id} "
