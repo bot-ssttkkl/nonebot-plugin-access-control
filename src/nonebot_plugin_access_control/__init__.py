@@ -1,6 +1,7 @@
 from nonebot import require
 
 require("nonebot_plugin_datastore")
+require("nonebot_plugin_apscheduler")
 
 from . import access_control
 from . import config

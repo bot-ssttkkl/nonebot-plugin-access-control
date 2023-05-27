@@ -2,8 +2,16 @@ from abc import ABC, abstractmethod
 from datetime import timedelta
 from typing import AsyncGenerator, Optional
 
+from nonebot import Bot
+from nonebot.internal.adapter import Event
+
 from ..rate_limit import RateLimitRule
 from ...event_bus import T_Listener
+
+
+class IRateLimitToken:
+    async def retire(self):
+        ...
 
 
 class IServiceRateLimit(ABC):
@@ -44,7 +52,11 @@ class IServiceRateLimit(ABC):
         ...
 
     @abstractmethod
-    async def acquire_token_for_rate_limit(self, *subject: str, user: str) -> bool:
+    async def acquire_token_for_rate_limit(self, bot: Bot, event: Event) -> Optional[IRateLimitToken]:
+        ...
+
+    @abstractmethod
+    async def acquire_token_for_rate_limit_by_subjects(self, *subject: str) -> Optional[IRateLimitToken]:
         ...
 
     @classmethod

@@ -9,6 +9,7 @@ from nonebot.internal.matcher import Matcher
 from .impl.permission import ServicePermissionImpl
 from .impl.rate_limit import ServiceRateLimitImpl
 from .interface import IService
+from .interface.rate_limit import IRateLimitToken
 from .permission import Permission
 from .rate_limit import RateLimitRule
 from ..errors import AccessControlError, PermissionDeniedError, RateLimitedError
@@ -77,10 +78,9 @@ class Service(Generic[T_ParentService, T_ChildService],
             raise PermissionDeniedError()
 
         if acquire_rate_limit_token:
-            user_id = subjects[0]
-            allow = await self.acquire_token_for_rate_limit(*subjects, user=user_id)
+            token = await self.acquire_token_for_rate_limit_by_subjects(*subjects)
 
-            if not allow:
+            if token is None:
                 raise RateLimitedError()
 
     def on_set_permission(self, func: Optional[T_Listener] = None):
@@ -144,8 +144,11 @@ class Service(Generic[T_ParentService, T_ChildService],
     async def remove_rate_limit_rule(cls, rule_id: str) -> bool:
         return await ServiceRateLimitImpl.remove_rate_limit_rule(rule_id)
 
-    async def acquire_token_for_rate_limit(self, *subject: str, user: str) -> bool:
-        return await self._rate_limit_impl.acquire_token_for_rate_limit(*subject, user=user)
+    async def acquire_token_for_rate_limit(self, bot: Bot, event: Event) -> Optional[IRateLimitToken]:
+        return await self._rate_limit_impl.acquire_token_for_rate_limit(bot, event)
+
+    async def acquire_token_for_rate_limit_by_subjects(self, *subject: str) -> Optional[IRateLimitToken]:
+        return await self._rate_limit_impl.acquire_token_for_rate_limit_by_subjects(*subject)
 
     @classmethod
     async def clear_rate_limit_tokens(cls):

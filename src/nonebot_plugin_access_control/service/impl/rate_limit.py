@@ -1,22 +1,37 @@
 from datetime import datetime, timedelta
-from typing import AsyncGenerator, TypeVar, Generic
+from typing import AsyncGenerator, TypeVar, Generic, Collection
 from typing import Optional
 
-from nonebot import require, logger
+from apscheduler.triggers.interval import IntervalTrigger
+from nonebot import logger, Bot
+from nonebot.internal.adapter import Event
+from nonebot_plugin_apscheduler import scheduler
 from nonebot_plugin_datastore.db import get_engine
 from sqlalchemy import delete, select
 from sqlalchemy import func
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..interface import IService
-from ..interface.rate_limit import IServiceRateLimit
-from ..rate_limit import RateLimitRule, RateLimitToken
+from ..interface.rate_limit import IServiceRateLimit, IRateLimitToken
+from ..rate_limit import RateLimitRule, RateLimitSingleToken
 from ...errors import AccessControlValueError
 from ...event_bus import T_Listener, EventType, on_event, fire_event
 from ...models import RateLimitTokenOrm, RateLimitRuleOrm
+from ...subject import extract_subjects
 from ...utils.session import use_session_or_create
 
 T_Service = TypeVar("T_Service", bound=IService)
+
+
+class RateLimitTokenImpl(IRateLimitToken):
+    def __init__(self, tokens: Collection[RateLimitSingleToken], service: "ServiceRateLimitImpl"):
+        self.tokens = tokens
+        self.service = service
+
+    async def retire(self):
+        async with AsyncSession(get_engine()) as sess:
+            for t in self.tokens:
+                await self.service._retire_token(t, session=sess)
 
 
 class ServiceRateLimitImpl(Generic[T_Service], IServiceRateLimit):
@@ -165,7 +180,7 @@ class ServiceRateLimitImpl(Generic[T_Service], IServiceRateLimit):
 
     @staticmethod
     async def _acquire_token(rule: RateLimitRule, user: str,
-                             *, session: Optional[AsyncSession] = None) -> Optional[RateLimitToken]:
+                             *, session: Optional[AsyncSession] = None) -> Optional[RateLimitSingleToken]:
         now = datetime.utcnow()
 
         async with use_session_or_create(session) as sess:
@@ -185,17 +200,29 @@ class ServiceRateLimitImpl(Generic[T_Service], IServiceRateLimit):
 
             await sess.refresh(x)
 
-            return RateLimitToken(x.id, x.rule_id, x.user, x.acquire_time)
+            logger.trace(f"[rate limit] token acquired for rule {x.rule_id} by user {x.user} "
+                         f"(service: {rule.service})")
+
+            return RateLimitSingleToken(x.id, x.rule_id, x.user, x.acquire_time)
 
     @staticmethod
-    async def _retire_token(token: RateLimitToken, *, session: Optional[AsyncSession] = None):
+    async def _retire_token(token: RateLimitSingleToken, *, session: Optional[AsyncSession] = None):
         async with use_session_or_create(session) as sess:
             stmt = delete(RateLimitTokenOrm).where(RateLimitTokenOrm.id == token.id)
             await sess.execute(stmt)
             await sess.commit()
 
-    async def acquire_token_for_rate_limit(self, *subject: str, user: str,
-                                           session: Optional[AsyncSession] = None) -> bool:
+            logger.trace(f"[rate limit] token retired for rule {token.rule_id} by user {token.user}")
+
+    async def acquire_token_for_rate_limit(self, bot: Bot, event: Event) -> Optional[RateLimitTokenImpl]:
+        return await self.acquire_token_for_rate_limit_by_subjects(*extract_subjects(bot, event))
+
+    async def acquire_token_for_rate_limit_by_subjects(self, *subject: str,
+                                                       session: Optional[AsyncSession] = None) \
+            -> Optional[RateLimitTokenImpl]:
+        assert len(subject) > 0, "require at least one subject"
+        user = subject[0]
+
         async with use_session_or_create(session) as sess:
             tokens = []
 
@@ -204,23 +231,18 @@ class ServiceRateLimitImpl(Generic[T_Service], IServiceRateLimit):
             for rule in rules:
                 token = await self._acquire_token(rule, user, session=sess)
                 if token is not None:
-                    logger.trace(f"[rate limit] token acquired for rule {rule.id} "
-                                 f"(service: {rule.service}, subject: {rule.subject})")
                     tokens.append(token)
                 else:
                     logger.debug(f"[rate limit] limit reached for rule {rule.id} "
                                  f"(service: {rule.service}, subject: {rule.subject})")
                     for t in tokens:
                         await self._retire_token(t, session=sess)
-                        logger.trace(f"[rate limit] token retired for rule {rule.id} "
-                                     f"(service: {rule.service}, subject: {rule.subject})")
-                    return False
+                    return None
 
                 if rule.overwrite:
                     break
 
-            # 未设置rule
-            return True
+            return RateLimitTokenImpl(tokens, self)
 
     @classmethod
     async def clear_rate_limit_tokens(cls, *, session: Optional[AsyncSession] = None):
@@ -231,11 +253,7 @@ class ServiceRateLimitImpl(Generic[T_Service], IServiceRateLimit):
             logger.debug(f"deleted {result.rowcount} rate limit token(s)")
 
 
-require('nonebot_plugin_apscheduler')
-from nonebot_plugin_apscheduler import scheduler
-
-
-@scheduler.scheduled_job("cron", minute="*/10", id="delete_outdated_tokens")
+@scheduler.scheduled_job(IntervalTrigger(minutes=10), id="delete_outdated_tokens")
 async def _delete_outdated_tokens():
     async with AsyncSession(get_engine()) as session:
         now = datetime.utcnow()
@@ -243,7 +261,7 @@ async def _delete_outdated_tokens():
         async for rule in await session.stream_scalars(select(RateLimitRuleOrm)):
             stmt = (delete(RateLimitTokenOrm)
                     .where(RateLimitTokenOrm.rule_id == rule.id,
-                           RateLimitTokenOrm.acquire_time < now + timedelta(seconds=rule.time_span))
+                           RateLimitTokenOrm.acquire_time < now - timedelta(seconds=rule.time_span))
                     .execution_options(synchronize_session=False))
             stmts.append(stmt)
 

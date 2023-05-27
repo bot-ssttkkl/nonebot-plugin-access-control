@@ -22,7 +22,7 @@ async def _(bot: Bot, matcher: Matcher, event: Event):
     elif args[0] == 'on':
         try:
             scheduler.add_job(job_handler,
-                              IntervalTrigger(minutes=1),
+                              IntervalTrigger(seconds=10),
                               kwargs={
                                   "bot_id": bot.self_id,
                                   "event": event

@@ -1,2 +1,2 @@
 from .rule import RateLimitRule
-from .token import RateLimitToken
+from .token import RateLimitSingleToken
