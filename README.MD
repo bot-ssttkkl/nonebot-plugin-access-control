@@ -303,6 +303,33 @@ async def _(matcher: Matcher):
 
 APScheduler示例：[src/nonebot_plugin_ac_demo/apscheduler_demo.py](src/nonebot_plugin_ac_demo/apscheduler_demo.py)
 
+对于一些功能，如果希望在执行失败时不消耗限流次数，则需要开发者手动进行鉴权与限流。
+
+```python
+d_matcher = on_command('d')
+d_service = plugin_service.create_subservice('d')
+
+
+@d_matcher.handle()
+async def _(bot: Bot, event: Event, matcher: Matcher):
+    if not await d_service.check(bot, event, acquire_rate_limit_token=False):
+        # 没有权限
+        await matcher.finish()
+        
+    token = await d_service.acquire_token_for_rate_limit(bot, event)
+    if token is None:
+        # 已达到限流次数上线
+        await matcher.finish()
+    
+    ok = do_your_logic()
+    
+    if not ok:
+        # 功能执行失败时，收回限流消耗的次数
+        await token.retire()
+    
+    await matcher.send("c")
+```
+
 6. 事件订阅
 
 通过`service.on_set_permission`、`service.on_remove_permission`、`service.on_change_permission`方法可以订阅事件，具体如下表：
