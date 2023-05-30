@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "nonebot-plugin-access-control"
-version = "0.4.3"
+version = "0.4.4"
 description = ""
 authors = ["ssttkkl <huang.wen.long@hotmail.com>"]
 license = "MIT"
@@ -23,6 +23,7 @@ shortuuid = "^1.0.11"
 [tool.poetry.group.dev.dependencies]
 nonebot-adapter-onebot = "^2.1.5"
 nonebot-adapter-kaiheila = "^0.1.0"
+nonebot-adapter-qqguild = "^0.2.2"
 nb-cli = "^1.0.5"
 asyncpg = "^0.27.0"
 

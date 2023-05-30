@@ -13,6 +13,7 @@ supported_modules = {
     "OneBot V11": "nonebot_plugin_access_control_onebot",
     "OneBot V12": "nonebot_plugin_access_control_onebot",
     "Kaiheila": "nonebot_plugin_access_control_kaiheila",
+    "QQ Guild": "nonebot_plugin_access_control_qqguild"
 }
 
 loaded_modules = []
