@@ -1,10 +1,13 @@
 from abc import ABC
 from datetime import timedelta
-from typing import Optional, Generic, TypeVar, Type, AsyncGenerator
+from functools import wraps
+from typing import Optional, Generic, TypeVar, Type, AsyncGenerator, Dict
 
-from nonebot import Bot
+from nonebot import Bot, logger
+from nonebot.exception import IgnoredException
 from nonebot.internal.adapter import Event
-from nonebot.internal.matcher import Matcher
+from nonebot.internal.matcher import Matcher, current_bot, current_event, current_matcher
+from nonebot.message import run_preprocessor
 
 from .impl.permission import ServicePermissionImpl
 from .impl.rate_limit import ServiceRateLimitImpl
@@ -12,6 +15,7 @@ from .interface import IService
 from .interface.rate_limit import IRateLimitToken
 from .permission import Permission
 from .rate_limit import RateLimitRule
+from ..config import conf
 from ..errors import AccessControlError, PermissionDeniedError, RateLimitedError
 from ..event_bus import T_Listener
 from ..subject import extract_subjects
@@ -23,6 +27,8 @@ T_ChildService = TypeVar('T_ChildService', bound="Service", covariant=True)
 class Service(Generic[T_ParentService, T_ChildService],
               IService["Service", T_ParentService, T_ChildService],
               ABC):
+    _matcher_service_mapping: Dict[Type[Matcher], "Service"] = {}
+
     def __init__(self):
         self._permission_impl = ServicePermissionImpl[Service](self)
         self._rate_limit_impl = ServiceRateLimitImpl[Service](self)
@@ -50,8 +56,37 @@ class Service(Generic[T_ParentService, T_ChildService],
         return None
 
     def patch_matcher(self, matcher: Type[Matcher]) -> Type[Matcher]:
-        from ..access_control import patch_matcher
-        return patch_matcher(matcher, self)
+        self._matcher_service_mapping[matcher] = self
+        logger.debug(f"patched {matcher}  (with service {self.qualified_name})")
+        return matcher
+
+    def patch_handler(self, retire_on_throw: bool = False):
+        def decorator(func):
+            @wraps(func)
+            async def wrapped_func(*args, **kwargs):
+                bot = current_bot.get()
+                event = current_event.get()
+
+                if not await self.check(bot, event, acquire_rate_limit_token=False):
+                    raise PermissionDeniedError()
+
+                token = await self.acquire_token_for_rate_limit(bot, event)
+                if token is None:
+                    raise RateLimitedError()
+
+                matcher = current_matcher.get()
+                matcher.state["ac_token"] = token
+
+                try:
+                    return await func(*args, **kwargs)
+                except BaseException as e:
+                    if retire_on_throw:
+                        await token.retire()
+                    raise e
+
+            return wrapped_func
+
+        return decorator
 
     async def check(self, bot: Bot, event: Event,
                     *, acquire_rate_limit_token: bool = True,
@@ -153,3 +188,21 @@ class Service(Generic[T_ParentService, T_ChildService],
     @classmethod
     async def clear_rate_limit_tokens(cls):
         return await ServiceRateLimitImpl.clear_rate_limit_tokens()
+
+
+@run_preprocessor
+async def check(matcher: Matcher, bot: Bot, event: Event):
+    service = Service._matcher_service_mapping.get(type(matcher), None)
+    if service is None:
+        return
+
+    try:
+        await service.check(bot, event, throw_on_fail=True)
+    except PermissionDeniedError:
+        if conf.access_control_reply_on_permission_denied:
+            await matcher.send(conf.access_control_reply_on_permission_denied)
+        raise IgnoredException("permission denied (by nonebot_plugin_access_control)")
+    except RateLimitedError:
+        if conf.access_control_reply_on_rate_limited:
+            await matcher.send(conf.access_control_reply_on_rate_limited)
+        raise IgnoredException("rate limited (by nonebot_plugin_access_control)")

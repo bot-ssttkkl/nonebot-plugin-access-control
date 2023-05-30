@@ -46,6 +46,10 @@ class IServiceBase(Generic[T_Service, T_ParentService, T_ChildService], ABC):
         raise NotImplementedError()
 
     @abstractmethod
+    def patch_handler(self, retire_on_throw: bool = False):
+        raise NotImplementedError()
+
+    @abstractmethod
     async def check(self, bot: Bot, event: Event,
                     *, acquire_rate_limit_token: bool = True,
                     throw_on_fail: bool = False) -> bool:

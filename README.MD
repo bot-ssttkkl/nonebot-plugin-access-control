@@ -42,9 +42,7 @@ _✨ Nonebot 权限控制 ✨_
 
 当我们对用户进行权限控制时，我们想要的是针对拥有某种同样身份的所有用户进行配置，而不是对每一个具体用户分别配置。因此，我们引入主体的概念。 **主体（Subject）代表了拥有某种同样身份的用户的集合，也是设置权限的基本单位。** 当我们说用户具有某个主体，也就是说用户在该主体所代表的集合内。换句话说，主体就是一个用户所具有的身份。
 
-一个用户通常拥有多个主体。举个例子：QQ上群组G的用户U发送了一条消息，该用户同时具有“用户U”、“群组G成员”、“QQ用户”、“Bot用户”这几个主体。同时QQ上群组G的用户V也发送了一条消息，该用户该用户同时具有“用户V”、“群组G成员”、“QQ用户”、“Bot用户”这几个主体。用户拥有的所有主体，按照规模从小到大排序，呈现如下图的逐层包含关系：
-
-![](docs/img/1.svg)
+一个用户通常拥有多个主体。举个例子：QQ上群组G的用户U发送了一条消息，该用户同时具有“用户U”、“群组G成员”、“QQ用户”、“Bot用户”这几个主体。同时QQ上群组G的用户V也发送了一条消息，该用户该用户同时具有“用户V”、“群组G成员”、“QQ用户”、“Bot用户”这几个主体。
 
 当设置权限时，我们直接针对一个主体进行设置。当鉴权时，我们对用户的所有主体**按优先级从高到低的顺序**，逐一检查是否设置了权限。一旦检查到某个主体设置了权限，就以该主体设置的权限作为该用户的权限。
 
@@ -234,7 +232,7 @@ from nonebot_plugin_access_control.service import create_plugin_service
 plugin_service = create_plugin_service("nonebot_plugin_ac_demo")
 ```
 
-3. 通过PluginService.create_subservice创建SubService实例。调用`Service.patch_matcher()`应用至Matcher
+3. 通过PluginService.create_subservice创建SubService实例。调用`Service.patch_matcher()`应用至Matcher，或在事件处理函数上应用装饰器`Service.patch_handle()`。（二选一）
 
 ```python
 group1 = plugin_service.create_subservice("group1")
@@ -261,12 +259,13 @@ async def _(matcher: Matcher):
 
 c_matcher = on_command('c')
 c_service = plugin_service.create_subservice('c')
-c_service.patch_matcher(c_matcher)
 
 
 @c_matcher.handle()
+@c_service.patch_handler()  # 必须在 @c_matcher.handle() 之下
 async def _(matcher: Matcher):
     await matcher.send("c")
+
 ```
 
 插件服务的结构如下所示：

@@ -27,9 +27,9 @@ async def _(matcher: Matcher):
 
 c_matcher = on_command('c')
 c_service = plugin_service.create_subservice('c')
-c_service.patch_matcher(c_matcher)
 
 
 @c_matcher.handle()
+@c_service.patch_handler()
 async def _(matcher: Matcher):
     await matcher.send("c")
