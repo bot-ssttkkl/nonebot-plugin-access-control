@@ -2,6 +2,7 @@ from nonebot import require
 
 require("nonebot_plugin_datastore")
 require("nonebot_plugin_apscheduler")
+require("nonebot_plugin_session")
 
 from .config import conf
 from .service import get_nonebot_service
@@ -11,9 +12,7 @@ from nonebot import logger, get_driver, get_loaded_plugins
 
 supported_modules = {
     "OneBot V11": "nonebot_plugin_access_control_onebot",
-    "OneBot V12": "nonebot_plugin_access_control_onebot",
-    "Kaiheila": "nonebot_plugin_access_control_kaiheila",
-    "QQ Guild": "nonebot_plugin_access_control_qqguild"
+    "OneBot V12": "nonebot_plugin_access_control_onebot"
 }
 
 loaded_modules = []

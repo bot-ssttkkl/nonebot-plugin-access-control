@@ -1,4 +1,0 @@
-from nonebot_plugin_access_control.subject import union_subject_extractor
-from nonebot_plugin_access_control_qqguild.subject.extractor import QQGuildSubjectExtractor
-
-union_subject_extractor.register(QQGuildSubjectExtractor())

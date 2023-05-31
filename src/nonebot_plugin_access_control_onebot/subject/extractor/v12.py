@@ -35,6 +35,17 @@ class OneBotV12SubjectExtractor(SubjectExtractor[Bot, Event]):
         li = []
 
         if user_id is not None:
+            if channel_id is not None:
+                if guild_id is not None:
+                    li.append(f"{bot.platform}:g{guild_id}:c{channel_id}:{user_id}")
+                    li.append(f"onebot:g{guild_id}:c{channel_id}:{user_id}")
+                li.append(f"{bot.platform}:c{channel_id}:{user_id}")
+                li.append(f"onebot:c{channel_id}:{user_id}")
+
+            if group_id is not None:
+                li.append(f"{bot.platform}:g{group_id}:{user_id}")
+                li.append(f"onebot:g{group_id}:{user_id}")
+
             li.append(f"{bot.platform}:{user_id}")
             li.append(f"onebot:{user_id}")
             if is_superuser(bot, event):
@@ -45,6 +56,9 @@ class OneBotV12SubjectExtractor(SubjectExtractor[Bot, Event]):
             li.append(f"onebot:g{group_id}")
 
         if channel_id is not None:
+            if guild_id is not None:
+                li.append(f"{bot.platform}:g{guild_id}:c{channel_id}")
+                li.append(f"onebot:g{guild_id}:c{channel_id}")
             li.append(f"{bot.platform}:c{channel_id}")
             li.append(f"onebot:c{channel_id}")
 

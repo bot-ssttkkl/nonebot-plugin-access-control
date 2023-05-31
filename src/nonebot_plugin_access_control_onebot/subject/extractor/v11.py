@@ -21,14 +21,19 @@ class OneBotV11SubjectExtractor(SubjectExtractor[Bot, Event]):
         li = []
 
         user_id = getattr(event, "user_id", None)
+        group_id = getattr(event, "group_id", None)
+
         if user_id is not None:
+            if group_id is not None:
+                li.append(f"qq:g{group_id}:{user_id}")
+                li.append(f"onebot:g{group_id}:{user_id}")
+
             li.append(f"qq:{user_id}")
             li.append(f"onebot:{user_id}")
 
             if is_superuser(bot, event):
                 li.append("superuser")
 
-        group_id = getattr(event, "group_id", None)
         if group_id is not None:
             li.append(f"qq:g{group_id}")
             li.append(f"onebot:g{group_id}")

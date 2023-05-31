@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "nonebot-plugin-access-control"
-version = "0.5.0"
+version = "0.5.0.post1"
 description = ""
 authors = ["ssttkkl <huang.wen.long@hotmail.com>"]
 license = "MIT"
@@ -8,8 +8,7 @@ readme = "README.MD"
 repository = "https://github.com/ssttkkl/nonebot-plugin-access-control"
 packages = [
     { include = "nonebot_plugin_access_control", from = "src" },
-    { include = "nonebot_plugin_access_control_onebot", from = "src" },
-    { include = "nonebot_plugin_access_control_kaiheila", from = "src" },
+    { include = "nonebot_plugin_access_control_onebot", from = "src" }
 ]
 
 [tool.poetry.dependencies]
