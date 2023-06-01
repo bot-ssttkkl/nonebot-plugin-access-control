@@ -52,3 +52,6 @@ service_subparsers = service_parser.add_subparsers(help="操作", dest="action",
 
 service_ls_parser = service_subparsers.add_parser("ls", help="列出服务与子服务层级")
 service_ls_parser.add_argument("--srv", "--service", help="服务", dest="service")
+
+# ==== subject ====
+subject_parser = subparsers.add_parser("subject", help="主体")

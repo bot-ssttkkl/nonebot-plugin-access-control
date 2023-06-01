@@ -46,3 +46,5 @@ if conf.access_control_auto_patch_enabled:
 
         logger.opt(colors=True).success(
             "auto patched plugin(s): " + ', '.join([f'<y>{p.name}</y>' for p in patched_plugins]))
+
+from . import matchers

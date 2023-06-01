@@ -5,7 +5,7 @@ from typing import Optional, cast
 
 from nonebot import on_shell_command
 from nonebot.exception import ParserExit
-from nonebot.internal.matcher import Matcher
+from nonebot.internal.matcher import Matcher, current_bot, current_event
 from nonebot.permission import SUPERUSER
 from nonebot.typing import T_State
 
@@ -13,6 +13,7 @@ from .handle_error import handle_error
 from .parser import parser
 from ..service import Service, get_service_by_qualified_name
 from ..service.rate_limit import RateLimitRule
+from ..subject import extract_subjects
 from ..utils.tree import get_tree_summary
 
 
@@ -29,12 +30,12 @@ def parse_integer(text: str, full: bool = True) -> int:
     return num
 
 
-cmd = on_shell_command("ac", parser=parser, permission=SUPERUSER)
+cmd = on_shell_command("ac", parser=parser, permission=SUPERUSER, priority=1)
 
 
 @cmd.handle()
 @handle_error()
-async def _(matcher: Matcher, state: T_State):
+async def ac(matcher: Matcher, state: T_State):
     args = state["_args"]
     if isinstance(args, ParserExit):
         await matcher.finish(args.message)
@@ -63,6 +64,8 @@ async def _(matcher: Matcher, state: T_State):
     elif args.subcommand == 'service':
         if args.action == 'ls':
             await handle_service_ls(matcher, args.service)
+    elif args.subcommand == 'subject':
+        await handle_subject(matcher)
 
 
 help_text = """
@@ -259,3 +262,10 @@ async def handle_service_ls(matcher: Matcher, service_name: Optional[str]):
                 sio.write(s)
                 sio.write('\n')
             await matcher.send(sio.getvalue().strip())
+
+
+async def handle_subject(matcher: Matcher):
+    bot = current_bot.get()
+    event = current_event.get()
+    sbj = extract_subjects(bot, event)
+    await matcher.send('\n'.join(sbj))
