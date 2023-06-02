@@ -7,25 +7,7 @@ require("nonebot_plugin_session")
 from .config import conf
 from .service import get_nonebot_service
 
-from importlib import import_module
 from nonebot import logger, get_driver, get_loaded_plugins
-
-supported_modules = {
-    "OneBot V11": "nonebot_plugin_access_control_onebot",
-    "OneBot V12": "nonebot_plugin_access_control_onebot"
-}
-
-loaded_modules = []
-
-driver = get_driver()
-for adapter in driver._adapters:
-    if adapter in supported_modules:
-        import_module(supported_modules[adapter])
-        loaded_modules.append(adapter)
-        logger.debug(f"Succeed to loaded plugin for {adapter}")
-
-if len(loaded_modules):
-    logger.success(f"Loaded plugin for: {', '.join(loaded_modules)}")
 
 if conf.access_control_auto_patch_enabled:
     @get_driver().on_startup

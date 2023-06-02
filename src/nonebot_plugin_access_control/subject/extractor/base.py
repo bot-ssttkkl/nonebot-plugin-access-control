@@ -9,16 +9,9 @@ T_Event = TypeVar('T_Event', bound=Event, covariant=True)
 
 
 class SubjectExtractor(ABC, Generic[T_Bot, T_Event]):
+    @classmethod
     @abstractmethod
-    def get_adapter_shortname(self) -> str:
-        ...
-
-    @abstractmethod
-    def get_adapter_fullname(self) -> str:
-        ...
-
-    @abstractmethod
-    def is_platform_supported(self, platform: str) -> bool:
+    def bot_type(cls) -> str:
         ...
 
     @abstractmethod
