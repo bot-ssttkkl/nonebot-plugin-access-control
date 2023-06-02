@@ -52,13 +52,14 @@ _✨ Nonebot 权限控制 ✨_
 
 我们约定：`all`表示所有用户、`superuser`表示超级用户、`<平台名>`表示所有此平台的用户、`<协议名>`表示所有此协议的用户、所有与平台相关的主体均以`<平台名>:`开头、所有与协议相关的主体均以`<协议名>:`开头。
 
-各适配器的主体定义如下：
+插件依赖[nonebot-plugin-session](https://github.com/noneplugin/nonebot-plugin-session)提取事件的主体，各适配器的主体定义如下：
 
 - [OneBot V11](docs/onebot_v11.md)
 - [OneBot V12](docs/onebot_v12.md)
 - [Kaiheila](docs/kaiheila.md)
+- [QQ Guild](docs/qqguild.md)
+- Telegram：未测试，参考OneBot V12的定义
 
-如果你能帮助我们进行其他协议适配，欢迎提交PR。
 
 ### 服务
 
@@ -148,6 +149,8 @@ _✨ Nonebot 权限控制 ✨_
 - 服务查看
     - `/ac service ls`：列出所有服务与子服务层级
     - `/ac service ls --srv <服务>`：列出服务的子服务层级
+- 主体测试
+    - `/ac subject`：列出消息发送者的所有主体
 
 其中`<服务>`的格式如下：
 
