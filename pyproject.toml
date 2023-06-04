@@ -12,8 +12,8 @@ packages = [
 
 [tool.poetry.dependencies]
 python = "^3.9"
-nonebot2 = "^2.0.0rc3"
-nonebot-plugin-datastore = "^0.6.0a3"
+nonebot2 = "^2.0.0"
+nonebot-plugin-datastore = "^0.6.0"
 nonebot-plugin-apscheduler = "^0.2.0"
 shortuuid = "^1.0.11"
 

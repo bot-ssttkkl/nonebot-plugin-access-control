@@ -5,6 +5,8 @@ nonebot-plugin-access-control
 @License        : MIT
 @GitHub         : https://github.com/ssttkkl/nonebot-access-control
 """
+from .config import conf, Config
+
 from nonebot.plugin import PluginMetadata
 
 __plugin_metad__ = PluginMetadata(
@@ -42,7 +44,11 @@ __plugin_metad__ = PluginMetadata(
 - `nonebot`：对整个NoneBot进行开关
 - `<插件名>`：对整个插件进行开关
 - `<插件名>.<子服务名>.<子服务名>.....<子服务名>`：对插件内的某个子服务进行开关（需参照下文对插件进行配置）
-    """.strip()
+    """.strip(),
+    type="application",
+    homepage="https://github.com/ssttkkl/nonebot-access-control",
+    config=Config,
+    supported_adapters=None
 )
 
 from nonebot import require
@@ -51,7 +57,6 @@ require("nonebot_plugin_datastore")
 require("nonebot_plugin_apscheduler")
 require("nonebot_plugin_session")
 
-from .config import conf
 from .service import get_nonebot_service
 
 from nonebot import logger, get_driver, get_loaded_plugins
