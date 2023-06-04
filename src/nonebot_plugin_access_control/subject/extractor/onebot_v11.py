@@ -3,8 +3,8 @@ from typing import Optional
 from nonebot.adapters.onebot.v11 import Bot, Event
 from nonebot.adapters.onebot.v11.event import Sender
 
-from nonebot_plugin_access_control.subject import SubjectExtractor
-from nonebot_plugin_access_control.utils.superuser import is_superuser
+from .base import SubjectExtractor
+from ...utils.superuser import is_superuser
 
 
 class OneBotV11SubjectExtractor(SubjectExtractor[Bot, Event]):
