@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "nonebot-plugin-access-control"
-version = "0.5.3"
+version = "0.5.3.post1"
 description = ""
 authors = ["ssttkkl <huang.wen.long@hotmail.com>"]
 license = "MIT"
@@ -15,6 +15,7 @@ python = "^3.9"
 nonebot2 = "^2.0.0"
 nonebot-plugin-datastore = "^0.6.0"
 nonebot-plugin-apscheduler = "^0.2.0"
+nonebot-plugin-session = "^0.0.4"
 shortuuid = "^1.0.11"
 
 
