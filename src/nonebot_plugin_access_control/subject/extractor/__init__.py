@@ -2,12 +2,14 @@ from typing import List
 
 from nonebot import Bot, logger
 from nonebot.internal.adapter import Event
+from nonebot_plugin_session import Session
 
 from .base import SubjectExtractor
 from .session import SessionSubjectExtractor
 from .union import UnionSubjectExtractor
 
-union_subject_extractor = UnionSubjectExtractor(SessionSubjectExtractor())
+session_subject_extractor = SessionSubjectExtractor()
+union_subject_extractor = UnionSubjectExtractor(session_subject_extractor)
 
 try:
     from .onebot_v11 import OneBotV11SubjectExtractor
@@ -30,4 +32,10 @@ def extract_subjects(bot: Bot, event: Event) -> List[str]:
     return sbj
 
 
-__all__ = ("extract_subjects",)
+def extract_subjects_from_session(session: Session) -> List[str]:
+    sbj = session_subject_extractor.extract_from_session(session)
+    logger.trace("subjects: " + ', '.join(sbj))
+    return sbj
+
+
+__all__ = ("extract_subjects", "extract_subjects_from_session")

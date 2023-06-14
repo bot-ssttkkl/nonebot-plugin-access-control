@@ -24,7 +24,7 @@ class OneBotV11SubjectExtractor(SubjectExtractor[Bot, Event]):
             li.append(f"qq:{user_id}")
             li.append(f"onebot:{user_id}")
 
-            if is_superuser(bot, event):
+            if is_superuser(user_id, bot.type):
                 li.append("superuser")
 
             li.append(f"qq:g{group_id}")
@@ -46,7 +46,7 @@ class OneBotV11SubjectExtractor(SubjectExtractor[Bot, Event]):
             li.append(f"qq:{user_id}")
             li.append(f"onebot:{user_id}")
 
-            if is_superuser(bot, event):
+            if is_superuser(user_id, bot.type):
                 li.append("superuser")
 
             li.append("qq:private")

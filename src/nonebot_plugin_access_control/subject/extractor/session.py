@@ -2,7 +2,7 @@ from typing import List
 
 from nonebot import Bot
 from nonebot.internal.adapter import Event
-from nonebot_plugin_session import extract_session, SessionLevel
+from nonebot_plugin_session import extract_session, SessionLevel, Session
 
 from .base import SubjectExtractor
 from ...utils.superuser import is_superuser
@@ -13,9 +13,7 @@ class SessionSubjectExtractor(SubjectExtractor[Bot, Event]):
     def bot_type(cls) -> str:
         return ''
 
-    def extract(self, bot: Bot, event: Event) -> List[str]:
-        session = extract_session(bot, event)
-
+    def extract_from_session(self, session: Session) -> List[str]:
         li = []
 
         if session.level == SessionLevel.LEVEL3:
@@ -28,7 +26,7 @@ class SessionSubjectExtractor(SubjectExtractor[Bot, Event]):
             li.append(f"{session.platform}:g{guild_id}:{user_id}")
 
             li.append(f"{session.platform}:{user_id}")
-            if is_superuser(bot, event):
+            if is_superuser(user_id, session.bot_type):
                 li.append("superuser")
 
             li.append(f"{session.platform}:g{guild_id}:c{channel_id}")
@@ -42,7 +40,7 @@ class SessionSubjectExtractor(SubjectExtractor[Bot, Event]):
             li.append(f"{session.platform}:g{group_id}:{user_id}")
             li.append(f"{session.platform}:{user_id}")
 
-            if is_superuser(bot, event):
+            if is_superuser(user_id, session.bot_type):
                 li.append("superuser")
 
             li.append(f"{session.platform}:g{group_id}")
@@ -52,7 +50,7 @@ class SessionSubjectExtractor(SubjectExtractor[Bot, Event]):
 
             li.append(f"{session.platform}:{user_id}")
 
-            if is_superuser(bot, event):
+            if is_superuser(user_id, session.bot_type):
                 li.append("superuser")
 
             li.append(f"{session.platform}:private")
@@ -61,3 +59,7 @@ class SessionSubjectExtractor(SubjectExtractor[Bot, Event]):
         li.append("all")
 
         return li
+
+    def extract(self, bot: Bot, event: Event) -> List[str]:
+        session = extract_session(bot, event)
+        return self.extract_from_session(session)

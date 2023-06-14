@@ -1,14 +1,11 @@
-from nonebot import Bot
-from nonebot.internal.adapter import Event
+from nonebot import get_driver
+
+superusers = get_driver().config.superusers
 
 
-def is_superuser(bot: Bot, event: Event) -> bool:
-    try:
-        user_id = event.get_user_id()
-    except Exception:
-        return False
+def is_superuser(user_id: str, bot_type: str) -> bool:
     return (
-            f"{bot.adapter.get_name().split(maxsplit=1)[0].lower()}:{user_id}"
-            in bot.config.superusers
-            or user_id in bot.config.superusers  # 兼容旧配置
+            f"{bot_type.split(maxsplit=1)[0].lower()}:{user_id}"
+            in superusers
+            or user_id in superusers  # 兼容旧配置
     )
