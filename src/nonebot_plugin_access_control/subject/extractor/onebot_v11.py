@@ -15,7 +15,7 @@ class OneBotV11SubjectExtractor(SubjectExtractor[Bot, Event]):
     def extract(self, bot: Bot, event: Event):
         li = []
 
-        user_id = getattr(event, "user_id")
+        user_id = getattr(event, "user_id", None)
         group_id = getattr(event, "group_id", None)
 
         if group_id is not None:
@@ -42,7 +42,7 @@ class OneBotV11SubjectExtractor(SubjectExtractor[Bot, Event]):
 
             li.append("qq:group")
             li.append("onebot:group")
-        else:
+        elif user_id is not None:
             li.append(f"qq:{user_id}")
             li.append(f"onebot:{user_id}")
 
