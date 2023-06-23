@@ -35,8 +35,8 @@ class EventType(str, Enum):
 
 T = TypeVar("T")
 T_Kwargs = Dict[str, Any]
-T_Filter = Callable[[...], bool]
-T_Listener = Callable[[...], Awaitable[None]]
+T_Filter = Callable[..., bool]
+T_Listener = Callable[..., Awaitable[None]]
 
 _listeners: Dict[EventType, List[Tuple[T_Filter, T_Listener]]] = defaultdict(list)
 

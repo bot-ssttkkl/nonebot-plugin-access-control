@@ -46,7 +46,7 @@ __plugin_metad__ = PluginMetadata(
 - `<插件名>.<子服务名>.<子服务名>.....<子服务名>`：对插件内的某个子服务进行开关（需参照下文对插件进行配置）
     """.strip(),
     type="application",
-    homepage="https://github.com/ssttkkl/nonebot-access-control",
+    homepage="https://github.com/bot-ssttkkl/nonebot-access-control",
     config=Config,
     supported_adapters=None
 )
