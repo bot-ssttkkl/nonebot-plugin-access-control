@@ -41,7 +41,7 @@ T_Listener = Callable[..., Awaitable[None]]
 _listeners: Dict[EventType, List[Tuple[T_Filter, T_Listener]]] = defaultdict(list)
 
 
-def _call_with_kwargs(func: Callable[[...], T], kwargs: T_Kwargs) -> T:
+def _call_with_kwargs(func: Callable[..., T], kwargs: T_Kwargs) -> T:
     filtered_kwargs = {}
 
     sig = signature(func)
