@@ -1,22 +1,22 @@
 [tool.poetry]
 name = "nonebot-plugin-access-control"
-version = "0.5.7.post1"
+version = "0.5.8"
 description = ""
 authors = ["ssttkkl <huang.wen.long@hotmail.com>"]
 license = "MIT"
 readme = "README.MD"
-repository = "https://github.com/ssttkkl/nonebot-plugin-access-control"
+repository = "https://github.com/bot-ssttkkl/nonebot-plugin-access-control"
 packages = [
     { include = "nonebot_plugin_access_control", from = "src" }
 ]
 
 [tool.poetry.dependencies]
 python = "^3.9"
-nonebot2 = "^2.0.0"
-nonebot-plugin-datastore = "^1.0.0"
-nonebot-plugin-apscheduler = "^0.2.0"
-nonebot-plugin-session = ">=0.0.4"
-shortuuid = "^1.0.11"
+nonebot2 = ">=2.0.0"
+nonebot-plugin-datastore = ">=1.0.0"
+nonebot-plugin-apscheduler = ">=0.2.0"
+nonebot-plugin-session = ">=0.1.0"
+shortuuid = ">=1.0.11"
 
 
 [tool.poetry.group.dev.dependencies]
