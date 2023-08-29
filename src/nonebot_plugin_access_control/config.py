@@ -7,6 +7,8 @@ from pydantic import BaseSettings, Field
 class Config(BaseSettings):
     access_control_default_permission: Literal['allow', 'deny'] = 'allow'
 
+    access_control_rate_limit_token_storage: Literal['datastore', 'inmemory'] = 'inmemory'
+
     access_control_auto_patch_enabled: bool = False
     access_control_auto_patch_ignore: List[str] = Field(default_factory=list)
 

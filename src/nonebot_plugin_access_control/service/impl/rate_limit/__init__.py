@@ -11,14 +11,16 @@ from sqlalchemy import delete, select
 from sqlalchemy import func
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from ..interface import IService
-from ..interface.rate_limit import IServiceRateLimit, IRateLimitToken
-from ..rate_limit import RateLimitRule, RateLimitSingleToken
-from ...errors import AccessControlValueError
-from ...event_bus import T_Listener, EventType, on_event, fire_event
-from ...models import RateLimitTokenOrm, RateLimitRuleOrm
-from ...subject import extract_subjects
-from ...utils.session import use_session_or_create
+from .token import get_token_storage
+from .token.datastore import DataStoreTokenStorage
+from ...interface import IService
+from ...interface.rate_limit import IServiceRateLimit, IRateLimitToken
+from ...rate_limit import RateLimitRule, RateLimitSingleToken
+from ....errors import AccessControlValueError
+from ....event_bus import T_Listener, EventType, on_event, fire_event
+from ....models import RateLimitTokenOrm, RateLimitRuleOrm
+from ....subject import extract_subjects
+from ....utils.session import use_session_or_create
 
 T_Service = TypeVar("T_Service", bound=IService)
 
@@ -61,7 +63,7 @@ class ServiceRateLimitImpl(Generic[T_Service], IServiceRateLimit):
         async for x in await session.stream_scalars(stmt):
             s = service
             if s is None:
-                from ..methods import get_service_by_qualified_name
+                from ...methods import get_service_by_qualified_name
                 s = get_service_by_qualified_name(x.service)
             if s is not None:
                 yield RateLimitRule(x.id, s, x.subject, timedelta(seconds=x.time_span), x.limit, x.overwrite)
@@ -169,7 +171,7 @@ class ServiceRateLimitImpl(Generic[T_Service], IServiceRateLimit):
             await sess.delete(orm)
             await sess.commit()
 
-            from ..methods import get_service_by_qualified_name
+            from ...methods import get_service_by_qualified_name
             service = get_service_by_qualified_name(orm.service)
 
             rule = RateLimitRule(orm.id, service, orm.subject, timedelta(seconds=orm.time_span), orm.limit,
@@ -181,38 +183,16 @@ class ServiceRateLimitImpl(Generic[T_Service], IServiceRateLimit):
     @staticmethod
     async def _acquire_token(rule: RateLimitRule, user: str,
                              *, session: Optional[AsyncSession] = None) -> Optional[RateLimitSingleToken]:
-        now = datetime.utcnow()
-
-        async with use_session_or_create(session) as sess:
-            stmt = select(func.count()).where(
-                RateLimitTokenOrm.rule_id == rule.id,
-                RateLimitTokenOrm.user == user,
-                RateLimitTokenOrm.acquire_time >= now - rule.time_span
-            )
-            cnt = (await sess.execute(stmt)).scalar_one()
-
-            if cnt >= rule.limit:
-                return None
-
-            x = RateLimitTokenOrm(rule_id=rule.id, user=user)
-            sess.add(x)
-            await sess.commit()
-
-            await sess.refresh(x)
-
+        x = await get_token_storage(session=session).acquire_token(rule, user)
+        if x is not None:
             logger.trace(f"[rate limit] token acquired for rule {x.rule_id} by user {x.user} "
                          f"(service: {rule.service})")
-
-            return RateLimitSingleToken(x.id, x.rule_id, x.user, x.acquire_time)
+        return x
 
     @staticmethod
     async def _retire_token(token: RateLimitSingleToken, *, session: Optional[AsyncSession] = None):
-        async with use_session_or_create(session) as sess:
-            stmt = delete(RateLimitTokenOrm).where(RateLimitTokenOrm.id == token.id)
-            await sess.execute(stmt)
-            await sess.commit()
-
-            logger.trace(f"[rate limit] token retired for rule {token.rule_id} by user {token.user}")
+        await get_token_storage(session=session).retire_token(token)
+        logger.trace(f"[rate limit] token retired for rule {token.rule_id} by user {token.user}")
 
     async def acquire_token_for_rate_limit(self, bot: Bot, event: Event) -> Optional[RateLimitTokenImpl]:
         return await self.acquire_token_for_rate_limit_by_subjects(*extract_subjects(bot, event))
@@ -251,25 +231,3 @@ class ServiceRateLimitImpl(Generic[T_Service], IServiceRateLimit):
             result = await sess.execute(stmt)
             await sess.commit()
             logger.debug(f"deleted {result.rowcount} rate limit token(s)")
-
-
-@scheduler.scheduled_job(IntervalTrigger(minutes=10), id="delete_outdated_tokens")
-async def _delete_outdated_tokens():
-    async with AsyncSession(get_engine()) as session:
-        now = datetime.utcnow()
-        stmts = []
-        async for rule in await session.stream_scalars(select(RateLimitRuleOrm)):
-            stmt = (delete(RateLimitTokenOrm)
-                    .where(RateLimitTokenOrm.rule_id == rule.id,
-                           RateLimitTokenOrm.acquire_time < now - timedelta(seconds=rule.time_span))
-                    .execution_options(synchronize_session=False))
-            stmts.append(stmt)
-
-        rowcount = 0
-        for stmt in stmts:
-            result = await session.execute(stmt)
-            rowcount += result.rowcount
-
-        await session.commit()
-
-        logger.debug(f"deleted {rowcount} outdated rate limit token(s)")

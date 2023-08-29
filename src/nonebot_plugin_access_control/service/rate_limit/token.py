@@ -7,3 +7,4 @@ class RateLimitSingleToken(NamedTuple):
     rule_id: str
     user: str
     acquire_time: datetime
+    expire_time: datetime
