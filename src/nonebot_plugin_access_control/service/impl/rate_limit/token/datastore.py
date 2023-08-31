@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime
 from typing import Optional
 
 from apscheduler.triggers.interval import IntervalTrigger
@@ -17,6 +17,25 @@ from .....utils.session import use_session_or_create
 class DataStoreTokenStorage(TokenStorage):
     def __init__(self, session: Optional[AsyncSession] = None):
         self.session = session
+
+    async def get_first_expire_token(self, rule: RateLimitRule, user: str) -> Optional[RateLimitSingleToken]:
+        now = datetime.utcnow()
+
+        async with use_session_or_create(self.session) as sess:
+            stmt = (select(func.min(RateLimitTokenOrm.expire_time))
+                    .select_from(RateLimitTokenOrm)
+                    .where(RateLimitTokenOrm.expire_time > now)
+                    .scalar_subquery())
+            stmt = (select(RateLimitTokenOrm)
+                    .where(RateLimitTokenOrm.expire_time == stmt)
+                    .limit(1))
+            res = (await sess.execute(stmt)).scalar_one_or_none()
+
+            if res is None:
+                return None
+            else:
+                return RateLimitSingleToken(res.id, res.rule_id, res.user, res.acquire_time,
+                                            res.acquire_time + rule.time_span)
 
     async def acquire_token(self, rule: RateLimitRule, user: str) -> Optional[RateLimitSingleToken]:
         now = datetime.utcnow()

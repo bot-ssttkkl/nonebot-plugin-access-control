@@ -1,5 +1,5 @@
 from abc import ABC
-from datetime import timedelta
+from datetime import timedelta, datetime
 from functools import wraps
 from typing import Optional, Generic, TypeVar, Type, AsyncGenerator, Dict
 
@@ -12,7 +12,7 @@ from nonebot.message import run_preprocessor
 from .impl.permission import ServicePermissionImpl
 from .impl.rate_limit import ServiceRateLimitImpl
 from .interface import IService
-from .interface.rate_limit import IRateLimitToken
+from .interface.rate_limit import AcquireTokenResult, IRateLimitToken
 from .permission import Permission
 from .rate_limit import RateLimitRule
 from ..config import conf
@@ -70,18 +70,18 @@ class Service(Generic[T_ParentService, T_ChildService],
                 if not await self.check(bot, event, acquire_rate_limit_token=False):
                     raise PermissionDeniedError()
 
-                token = await self.acquire_token_for_rate_limit(bot, event)
-                if token is None:
-                    raise RateLimitedError()
+                result = await self.acquire_token_for_rate_limit_receiving_result(bot, event)
+                if not result.success:
+                    raise RateLimitedError(result)
 
                 matcher = current_matcher.get()
-                matcher.state["ac_token"] = token
+                matcher.state["ac_token"] = result.token
 
                 try:
                     return await func(*args, **kwargs)
                 except BaseException as e:
                     if retire_on_throw:
-                        await token.retire()
+                        await result.token.retire()
                     raise e
 
             return wrapped_func
@@ -113,10 +113,9 @@ class Service(Generic[T_ParentService, T_ChildService],
             raise PermissionDeniedError()
 
         if acquire_rate_limit_token:
-            token = await self.acquire_token_for_rate_limit_by_subjects(*subjects)
-
-            if token is None:
-                raise RateLimitedError()
+            result = await self.acquire_token_for_rate_limit_by_subjects_receiving_result(*subjects)
+            if not result.success:
+                raise RateLimitedError(result)
 
     def on_set_permission(self, func: Optional[T_Listener] = None):
         return self._permission_impl.on_set_permission(func)
@@ -182,8 +181,14 @@ class Service(Generic[T_ParentService, T_ChildService],
     async def acquire_token_for_rate_limit(self, bot: Bot, event: Event) -> Optional[IRateLimitToken]:
         return await self._rate_limit_impl.acquire_token_for_rate_limit(bot, event)
 
+    async def acquire_token_for_rate_limit_receiving_result(self, bot: Bot, event: Event) -> AcquireTokenResult:
+        return await self._rate_limit_impl.acquire_token_for_rate_limit_receiving_result(bot, event)
+
     async def acquire_token_for_rate_limit_by_subjects(self, *subject: str) -> Optional[IRateLimitToken]:
         return await self._rate_limit_impl.acquire_token_for_rate_limit_by_subjects(*subject)
+
+    async def acquire_token_for_rate_limit_by_subjects_receiving_result(self, *subject: str) -> AcquireTokenResult:
+        return await self._rate_limit_impl.acquire_token_for_rate_limit_by_subjects_receiving_result(*subject)
 
     @classmethod
     async def clear_rate_limit_tokens(cls):
@@ -199,10 +204,16 @@ async def check(matcher: Matcher, bot: Bot, event: Event):
     try:
         await service.check(bot, event, throw_on_fail=True)
     except PermissionDeniedError:
-        if conf.access_control_reply_on_permission_denied:
+        if conf.access_control_reply_on_permission_denied_enabled:
             await matcher.send(conf.access_control_reply_on_permission_denied)
         raise IgnoredException("permission denied (by nonebot_plugin_access_control)")
-    except RateLimitedError:
-        if conf.access_control_reply_on_rate_limited:
-            await matcher.send(conf.access_control_reply_on_rate_limited)
+    except RateLimitedError as e:
+        if conf.access_control_reply_on_rate_limited_enabled:
+            msg = conf.access_control_reply_on_rate_limited
+            if msg is None:
+                now = datetime.utcnow()
+                available_time = e.result.available_time
+                msg = f"使用太频繁了，请稍后再试。" \
+                      '下次可用时间：{:.0f}秒后'.format(available_time.timestamp() - now.timestamp())
+            await matcher.send(msg)
         raise IgnoredException("rate limited (by nonebot_plugin_access_control)")

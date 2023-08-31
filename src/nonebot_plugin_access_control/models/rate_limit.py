@@ -38,6 +38,7 @@ class RateLimitTokenOrm(MappedAsDataclass, plugin_data.Model):
     __tablename__ = 'nonebot_plugin_access_control_rate_limit_token'
     __table_args__ = (
         Index("ix_ac_rate_limit_token_rule_id", "rule_id"),
+        Index("ix_ac_rate_limit_token_expire_time", "expire_time"),
         {
             "extend_existing": True
         }

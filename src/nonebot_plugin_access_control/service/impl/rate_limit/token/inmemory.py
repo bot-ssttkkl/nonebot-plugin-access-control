@@ -28,6 +28,17 @@ class InmemoryTokenStorage(TokenStorage):
         self.id_cnt += 1
         return self.id_cnt
 
+    async def get_first_expire_token(self, rule: RateLimitRule, user: str) -> Optional[RateLimitSingleToken]:
+        key = StorageKey(rule.id, user)
+        tokens = _handle_expired(self.data.get(key) or tuple())
+        self.data[key] = tokens
+
+        with_min_expire_time = None
+        for x in tokens:
+            if with_min_expire_time is None or x.expire_time < with_min_expire_time.expire_time:
+                with_min_expire_time = x
+        return with_min_expire_time
+
     async def acquire_token(self, rule: RateLimitRule, user: str) -> Optional[RateLimitSingleToken]:
         key = StorageKey(rule.id, user)
         tokens = _handle_expired(self.data.get(key) or tuple())
