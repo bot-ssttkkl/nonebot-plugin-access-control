@@ -25,7 +25,7 @@ class DataStoreTokenStorage(TokenStorage):
             stmt = select(func.count()).where(
                 RateLimitTokenOrm.rule_id == rule.id,
                 RateLimitTokenOrm.user == user,
-                RateLimitTokenOrm.acquire_time >= now - rule.time_span
+                RateLimitTokenOrm.expire_time > now
             )
             cnt = (await sess.execute(stmt)).scalar_one()
 
@@ -35,7 +35,7 @@ class DataStoreTokenStorage(TokenStorage):
             acquire_time = datetime.utcnow()
             expire_time = acquire_time + rule.time_span
 
-            x = RateLimitTokenOrm(rule_id=rule.id, user=user, acquire_time=acquire_time)
+            x = RateLimitTokenOrm(rule_id=rule.id, user=user, acquire_time=acquire_time, expire_time=expire_time)
             sess.add(x)
             await sess.commit()
 
@@ -58,7 +58,7 @@ async def _delete_outdated_tokens():
         async for rule in await session.stream_scalars(select(RateLimitRuleOrm)):
             stmt = (delete(RateLimitTokenOrm)
                     .where(RateLimitTokenOrm.rule_id == rule.id,
-                           RateLimitTokenOrm.acquire_time < now - timedelta(seconds=rule.time_span))
+                           RateLimitTokenOrm.expire_time <= now)
                     .execution_options(synchronize_session=False))
             stmts.append(stmt)
 

@@ -46,6 +46,7 @@ class RateLimitTokenOrm(MappedAsDataclass, plugin_data.Model):
     id: Mapped[int] = mapped_column(init=False, primary_key=True)
     rule_id: Mapped[str] = mapped_column(ForeignKey('nonebot_plugin_access_control_rate_limit_rule.id'))
     user: Mapped[str]
-    acquire_time: Mapped[datetime] = mapped_column(init=False, default_factory=datetime.utcnow)
+    acquire_time: Mapped[datetime] = mapped_column()
+    expire_time: Mapped[datetime] = mapped_column()
 
     rule: Mapped[RateLimitRuleOrm] = relationship(init=False, back_populates="tokens")
