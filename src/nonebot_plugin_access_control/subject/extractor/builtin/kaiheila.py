@@ -23,6 +23,6 @@ def extract_kaiheila_role(bot: Bot, event: Event, current: Sequence[str]) -> Seq
         # 添加qqguild:role_xxx的subject（在"kaiheila:g{guild_id}:c{channel_id}"之前）
         idx = li.index(f"kaiheila:g{guild_id}:c{channel_id}")
         for role in reversed(sorted(author.roles)):
-            li.insert(idx, f"kaiheila:g{guild_id}:role_{role}")
+            li.insert(idx, f"kaiheila:g{guild_id}.role_{role}")
 
     return li
