@@ -1,41 +1,39 @@
-from typing import List
+from typing import Sequence
 
 from nonebot import Bot, logger
 from nonebot.internal.adapter import Event
 from nonebot_plugin_session import Session
 
-from .base import SubjectExtractor
-from .session import SessionSubjectExtractor
-from .union import UnionSubjectExtractor
+from .base import T_SubjectExtractor, SubjectExtractorChain
+from .builtin.kaiheila import extract_kaiheila_role
+from .builtin.onebot_v11 import extract_onebot_v11_group_role
+from .builtin.qqguild import extract_qqguild_role
+from .builtin.session import extract_by_session, extract_from_session
 
-session_subject_extractor = SessionSubjectExtractor()
-union_subject_extractor = UnionSubjectExtractor(session_subject_extractor)
-
-try:
-    from .onebot_v11 import OneBotV11SubjectExtractor
-
-    union_subject_extractor.register(OneBotV11SubjectExtractor())
-except ImportError:
-    pass
-
-try:
-    from .onebot_v12 import OneBotV12SubjectExtractor
-
-    union_subject_extractor.register(OneBotV12SubjectExtractor())
-except ImportError:
-    pass
+extractor_chain = SubjectExtractorChain(
+    extract_by_session,
+    extract_onebot_v11_group_role,
+    extract_qqguild_role,
+    extract_kaiheila_role
+)
 
 
-def extract_subjects(bot: Bot, event: Event) -> List[str]:
-    sbj = union_subject_extractor.extract(bot, event)
-    logger.trace("subjects: " + ', '.join(sbj))
+def add_subject_extractor(extractor: T_SubjectExtractor) -> T_SubjectExtractor:
+    extractor_chain.add(extractor)
+    return extractor
+
+
+def extract_subjects(bot: Bot, event: Event) -> Sequence[str]:
+    sbj = extractor_chain(bot, event, [])
+    logger.debug("subjects: " + ', '.join(sbj))
     return sbj
 
 
-def extract_subjects_from_session(session: Session) -> List[str]:
-    sbj = session_subject_extractor.extract_from_session(session)
-    logger.trace("subjects: " + ', '.join(sbj))
+def extract_subjects_from_session(session: Session) -> Sequence[str]:
+    sbj = extract_from_session(session)
+    logger.debug("subjects: " + ', '.join(sbj))
     return sbj
 
 
-__all__ = ("extract_subjects", "extract_subjects_from_session")
+__all__ = ("T_SubjectExtractor", "add_subject_extractor",
+           "extract_subjects", "extract_subjects_from_session")

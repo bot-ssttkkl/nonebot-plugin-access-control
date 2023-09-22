@@ -173,5 +173,4 @@ poetry.toml
 /.idea/
 .env.dev
 .env.prod
-bot.py
 *.db
