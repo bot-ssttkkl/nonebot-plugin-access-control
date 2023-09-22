@@ -379,15 +379,15 @@ def extract_onebot_v11_group_role(bot: Bot, event: Event, current: Sequence[str]
     sender: Optional['Sender'] = getattr(event, "sender", None)
 
     if group_id is not None and sender is not None:
-        # 添加群管理/群主的subject
-        idx = li.index("qq:g{group_id}")
+        # 添加群管理/群主的subject（在"qq:g{group_id}"之前）
+        idx = li.index(f"qq:g{group_id}")
         if sender.role == 'owner':
-            li.insert(idx + 1, f"qq:group_owner")
-            li.insert(idx + 1, f"qq:g{group_id}.group_owner")
+            li.insert(idx, f"qq:group_owner")
+            li.insert(idx, f"qq:g{group_id}.group_owner")
 
         if sender.role == 'owner' or sender.role == 'admin':
-            li.insert(idx + 1, f"qq:group_admin")
-            li.insert(idx + 1, f"qq:g{group_id}.group_admin")
+            li.insert(idx, f"qq:group_admin")
+            li.insert(idx, f"qq:g{group_id}.group_admin")
 
     return li
 
