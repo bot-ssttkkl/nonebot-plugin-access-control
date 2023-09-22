@@ -5,11 +5,19 @@ nonebot-plugin-access-control
 @License        : MIT
 @GitHub         : https://github.com/ssttkkl/nonebot-access-control
 """
-from .config import conf, Config
-
+from nonebot import require
 from nonebot.plugin import PluginMetadata
 
-__plugin_metad__ = PluginMetadata(
+from .config import conf, Config
+
+require("nonebot_plugin_alconna")
+require("nonebot_plugin_apscheduler")
+require("nonebot_plugin_datastore")
+require("nonebot_plugin_session")
+
+from nonebot_plugin_session import __plugin_meta__ as plugin_session_meta
+
+__plugin_meta__ = PluginMetadata(
     name="权限控制",
     description="对功能进行权限控制以及调用次数限制",
     usage="""
@@ -48,37 +56,8 @@ __plugin_metad__ = PluginMetadata(
     type="application",
     homepage="https://github.com/bot-ssttkkl/nonebot-access-control",
     config=Config,
-    supported_adapters=None
+    supported_adapters=plugin_session_meta.supported_adapters
 )
 
-from nonebot import require
-
-require("nonebot_plugin_datastore")
-require("nonebot_plugin_apscheduler")
-require("nonebot_plugin_session")
-
-from .service import get_nonebot_service
-
-from nonebot import logger, get_driver, get_loaded_plugins
-
-if conf.access_control_auto_patch_enabled:
-    @get_driver().on_startup
-    def _():
-        nonebot_service = get_nonebot_service()
-
-        patched_plugins = []
-
-        for plugin in get_loaded_plugins():
-            if plugin.name == 'nonebot_plugin_access_control' or plugin.name in conf.access_control_auto_patch_ignore:
-                continue
-
-            service = nonebot_service.get_or_create_plugin_service(plugin.name)
-            if service.auto_created:
-                for matcher in plugin.matcher:
-                    service.patch_matcher(matcher)
-                patched_plugins.append(plugin)
-
-        logger.opt(colors=True).success(
-            "auto patched plugin(s): " + ', '.join([f'<y>{p.name}</y>' for p in patched_plugins]))
-
 from . import matchers
+from . import patcher

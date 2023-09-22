@@ -17,6 +17,8 @@ nonebot-plugin-datastore = ">=1.0.0"
 nonebot-plugin-apscheduler = ">=0.2.0"
 nonebot-plugin-session = ">=0.1.0"
 shortuuid = ">=1.0.11"
+nonebot-plugin-alconna = "^0.24.0"
+pytimeparser = "^0.2.0"
 
 
 [tool.poetry.group.dev.dependencies]
