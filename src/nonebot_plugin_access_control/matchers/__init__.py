@@ -6,6 +6,7 @@ import pytimeparser
 from arclet.alconna import Alconna, Subcommand, Args, Option, store_true, OptionResult
 from nonebot.internal.matcher import Matcher, current_bot, current_event
 from nonebot.internal.params import Depends
+from nonebot.permission import SUPERUSER
 from nonebot_plugin_alconna import on_alconna, Match, AlconnaMatch, Check, assign, Query
 
 from .handle_error import handle_error
@@ -80,7 +81,8 @@ cmd = on_alconna(
     use_cmd_start=True,
     use_cmd_sep=False,
     priority=1,
-    block=True
+    block=True,
+    permission=SUPERUSER,
 )
 
 cmd.__help_text__ = """
