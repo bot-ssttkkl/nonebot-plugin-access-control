@@ -1,16 +1,13 @@
-from typing import Protocol, Sequence
+from typing import Sequence, Callable
 
 from nonebot import Bot, logger
 from nonebot.internal.adapter import Event
 
-
-class SubjectExtractor(Protocol):
-    def __call__(self, bot: Bot, event: Event, current: Sequence[str]) -> Sequence[str]:
-        ...
+T_SubjectExtractor = Callable[[Bot, Event, Sequence[str]], Sequence[str]]
 
 
-class SubjectExtractorChain(SubjectExtractor):
-    def __init__(self, *extractors: SubjectExtractor):
+class SubjectExtractorChain:
+    def __init__(self, *extractors: T_SubjectExtractor):
         self.extractors = list(extractors)
 
     def __call__(self, bot: Bot, event: Event, current: Sequence[str]) -> Sequence[str]:
@@ -19,5 +16,5 @@ class SubjectExtractorChain(SubjectExtractor):
             logger.trace("current subjects: " + ', '.join(current))
         return current
 
-    def add(self, extractor: SubjectExtractor):
+    def add(self, extractor: T_SubjectExtractor):
         self.extractors.append(extractor)

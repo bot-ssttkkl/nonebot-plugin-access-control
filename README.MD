@@ -364,14 +364,14 @@ def your_custom_subject_extractor(bot: Bot, event: Event, current: Sequence[str]
 
 传入参数`bot`与`event`其义自明，而`current`参数表明当前阶段已经被提取出的主体，返回值表示经过该轮处理后提取出的主体。
 
-在主体提取流程，插件会**按顺序依次**调用已注册的主体提取器，每一轮中，将上一轮的返回值作为这一轮传入的`current`参数，并取最后一轮的返回值作为事件的主体。请注意维护主体提取器注册的顺序。（tips：如果你的主体提取器依赖其他插件中实现的主体提取器，可以依赖`nonebot`提供的`require`机制控制主体提取器注册的顺序）
+在主体提取流程，插件会**按顺序依次**调用已注册的主体提取器，每一轮调用时，将上一轮的返回值作为这一轮传入的`current`参数，并取最后一轮的返回值作为事件的主体。请注意维护主体提取器注册的顺序。（tips：如果你的主体提取器依赖其他插件中实现的主体提取器，可以依赖`nonebot`提供的`require`机制控制主体提取器注册的顺序）
 
-例如，下面这个主体提取器用于为群管理/群主提取相应的主体：
+例如，下面这个主体提取器用于为OneBot V11协议中群管理/群主提取相应的主体：
 
 ```python
 def extract_onebot_v11_group_role(bot: Bot, event: Event, current: Sequence[str]) -> Sequence[str]:
     if bot.type != "OneBot V11":
-        return
+        return current
 
     li = [*current]
 
@@ -382,14 +382,15 @@ def extract_onebot_v11_group_role(bot: Bot, event: Event, current: Sequence[str]
         # 添加群管理/群主的subject
         idx = li.index("qq:g{group_id}")
         if sender.role == 'owner':
-            li.insert(f"qq:g{group_id}.group_owner", idx+1)
-            li.insert(f"qq:group_owner", idx+1)
+            li.insert(idx + 1, f"qq:group_owner")
+            li.insert(idx + 1, f"qq:g{group_id}.group_owner")
 
         if sender.role == 'owner' or sender.role == 'admin':
-            li.insert(f"qq:g{group_id}.group_admin", idx+1)
-            li.insert(f"qq:group_admin", idx+1)
+            li.insert(idx + 1, f"qq:group_admin")
+            li.insert(idx + 1, f"qq:g{group_id}.group_admin")
 
     return li
+
 ```
 
 ## 配置项

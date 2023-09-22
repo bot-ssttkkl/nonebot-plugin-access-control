@@ -9,7 +9,7 @@ if TYPE_CHECKING:
 
 def extract_onebot_v11_group_role(bot: Bot, event: Event, current: Sequence[str]) -> Sequence[str]:
     if bot.type != "OneBot V11":
-        return
+        return current
 
     li = [*current]
 
@@ -20,11 +20,11 @@ def extract_onebot_v11_group_role(bot: Bot, event: Event, current: Sequence[str]
         # 添加群管理/群主的subject
         idx = li.index("qq:g{group_id}")
         if sender.role == 'owner':
-            li.insert(f"qq:g{group_id}.group_owner", idx+1)
-            li.insert(f"qq:group_owner", idx+1)
+            li.insert(idx + 1, f"qq:group_owner")
+            li.insert(idx + 1, f"qq:g{group_id}.group_owner")
 
         if sender.role == 'owner' or sender.role == 'admin':
-            li.insert(f"qq:g{group_id}.group_admin", idx+1)
-            li.insert(f"qq:group_admin", idx+1)
+            li.insert(idx + 1, f"qq:group_admin")
+            li.insert(idx + 1, f"qq:g{group_id}.group_admin")
 
     return li
