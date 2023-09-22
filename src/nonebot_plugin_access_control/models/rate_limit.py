@@ -17,7 +17,7 @@ def _gen_id():
 class RateLimitRuleOrm(MappedAsDataclass, plugin_data.Model):
     __tablename__ = 'nonebot_plugin_access_control_rate_limit_rule'
     __table_args__ = (
-        Index("ix_nonebot_plugin_access_control_rate_limit_rule_subject_service", "subject", "service"),
+        Index("ix_ac_rate_limit_rule_subject_service", "subject", "service"),
         {
             "extend_existing": True
         }
@@ -36,11 +36,18 @@ class RateLimitRuleOrm(MappedAsDataclass, plugin_data.Model):
 
 class RateLimitTokenOrm(MappedAsDataclass, plugin_data.Model):
     __tablename__ = 'nonebot_plugin_access_control_rate_limit_token'
-    __table_args__ = {"extend_existing": True}
+    __table_args__ = (
+        Index("ix_ac_rate_limit_token_rule_id", "rule_id"),
+        Index("ix_ac_rate_limit_token_expire_time", "expire_time"),
+        {
+            "extend_existing": True
+        }
+    )
 
     id: Mapped[int] = mapped_column(init=False, primary_key=True)
-    rule_id: Mapped[str] = mapped_column(ForeignKey('nonebot_plugin_access_control_rate_limit_rule.id'), index=True)
+    rule_id: Mapped[str] = mapped_column(ForeignKey('nonebot_plugin_access_control_rate_limit_rule.id'))
     user: Mapped[str]
-    acquire_time: Mapped[datetime] = mapped_column(init=False, default_factory=datetime.utcnow)
+    acquire_time: Mapped[datetime] = mapped_column()
+    expire_time: Mapped[datetime] = mapped_column()
 
     rule: Mapped[RateLimitRuleOrm] = relationship(init=False, back_populates="tokens")

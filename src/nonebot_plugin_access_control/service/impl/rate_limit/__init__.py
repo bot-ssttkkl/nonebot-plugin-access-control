@@ -1,24 +1,24 @@
-from datetime import datetime, timedelta
+from datetime import timedelta
 from typing import AsyncGenerator, TypeVar, Generic, Collection
 from typing import Optional
 
-from apscheduler.triggers.interval import IntervalTrigger
 from nonebot import logger, Bot
 from nonebot.internal.adapter import Event
-from nonebot_plugin_apscheduler import scheduler
 from nonebot_plugin_datastore.db import get_engine
 from sqlalchemy import delete, select
 from sqlalchemy import func
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from ..interface import IService
-from ..interface.rate_limit import IServiceRateLimit, IRateLimitToken
-from ..rate_limit import RateLimitRule, RateLimitSingleToken
-from ...errors import AccessControlValueError
-from ...event_bus import T_Listener, EventType, on_event, fire_event
-from ...models import RateLimitTokenOrm, RateLimitRuleOrm
-from ...subject import extract_subjects
-from ...utils.session import use_session_or_create
+from .token import get_token_storage
+from .token.datastore import DataStoreTokenStorage
+from ...interface import IService
+from ...interface.rate_limit import IServiceRateLimit, IRateLimitToken, AcquireTokenResult
+from ...rate_limit import RateLimitRule, RateLimitSingleToken
+from ....errors import AccessControlValueError
+from ....event_bus import T_Listener, EventType, on_event, fire_event
+from ....models import RateLimitTokenOrm, RateLimitRuleOrm
+from ....subject import extract_subjects
+from ....utils.session import use_session_or_create
 
 T_Service = TypeVar("T_Service", bound=IService)
 
@@ -61,7 +61,7 @@ class ServiceRateLimitImpl(Generic[T_Service], IServiceRateLimit):
         async for x in await session.stream_scalars(stmt):
             s = service
             if s is None:
-                from ..methods import get_service_by_qualified_name
+                from ...methods import get_service_by_qualified_name
                 s = get_service_by_qualified_name(x.service)
             if s is not None:
                 yield RateLimitRule(x.id, s, x.subject, timedelta(seconds=x.time_span), x.limit, x.overwrite)
@@ -169,7 +169,7 @@ class ServiceRateLimitImpl(Generic[T_Service], IServiceRateLimit):
             await sess.delete(orm)
             await sess.commit()
 
-            from ..methods import get_service_by_qualified_name
+            from ...methods import get_service_by_qualified_name
             service = get_service_by_qualified_name(orm.service)
 
             rule = RateLimitRule(orm.id, service, orm.subject, timedelta(seconds=orm.time_span), orm.limit,
@@ -179,52 +179,54 @@ class ServiceRateLimitImpl(Generic[T_Service], IServiceRateLimit):
             return True
 
     @staticmethod
+    async def _get_first_expire_token(rule: RateLimitRule, user: str,
+                                      *, session: Optional[AsyncSession] = None) -> Optional[RateLimitSingleToken]:
+        return await get_token_storage(session=session).get_first_expire_token(rule, user)
+
+    @staticmethod
     async def _acquire_token(rule: RateLimitRule, user: str,
                              *, session: Optional[AsyncSession] = None) -> Optional[RateLimitSingleToken]:
-        now = datetime.utcnow()
-
-        async with use_session_or_create(session) as sess:
-            stmt = select(func.count()).where(
-                RateLimitTokenOrm.rule_id == rule.id,
-                RateLimitTokenOrm.user == user,
-                RateLimitTokenOrm.acquire_time >= now - rule.time_span
-            )
-            cnt = (await sess.execute(stmt)).scalar_one()
-
-            if cnt >= rule.limit:
-                return None
-
-            x = RateLimitTokenOrm(rule_id=rule.id, user=user)
-            sess.add(x)
-            await sess.commit()
-
-            await sess.refresh(x)
-
-            logger.trace(f"[rate limit] token acquired for rule {x.rule_id} by user {x.user} "
+        x = await get_token_storage(session=session).acquire_token(rule, user)
+        if x is not None:
+            logger.trace(f"[rate limit] token {x.id} acquired for rule {x.rule_id} by user {x.user} "
                          f"(service: {rule.service})")
-
-            return RateLimitSingleToken(x.id, x.rule_id, x.user, x.acquire_time)
+        return x
 
     @staticmethod
     async def _retire_token(token: RateLimitSingleToken, *, session: Optional[AsyncSession] = None):
-        async with use_session_or_create(session) as sess:
-            stmt = delete(RateLimitTokenOrm).where(RateLimitTokenOrm.id == token.id)
-            await sess.execute(stmt)
-            await sess.commit()
+        await get_token_storage(session=session).retire_token(token)
+        logger.trace(f"[rate limit] token {token.id} retired for rule {token.rule_id} by user {token.user}")
 
-            logger.trace(f"[rate limit] token retired for rule {token.rule_id} by user {token.user}")
+    async def acquire_token_for_rate_limit(self, bot: Bot, event: Event,
+                                           *, session: Optional[AsyncSession] = None) -> Optional[RateLimitTokenImpl]:
+        result = await self.acquire_token_for_rate_limit_receiving_result(bot, event, session=session)
+        return result.token
 
-    async def acquire_token_for_rate_limit(self, bot: Bot, event: Event) -> Optional[RateLimitTokenImpl]:
-        return await self.acquire_token_for_rate_limit_by_subjects(*extract_subjects(bot, event))
+    async def acquire_token_for_rate_limit_receiving_result(
+            self,
+            bot: Bot, event: Event,
+            *, session: Optional[AsyncSession] = None
+    ) -> AcquireTokenResult:
+        return await self.acquire_token_for_rate_limit_by_subjects_receiving_result(*extract_subjects(bot, event),
+                                                                                    session=session)
 
-    async def acquire_token_for_rate_limit_by_subjects(self, *subject: str,
-                                                       session: Optional[AsyncSession] = None) \
-            -> Optional[RateLimitTokenImpl]:
+    async def acquire_token_for_rate_limit_by_subjects(
+            self, *subject: str,
+            session: Optional[AsyncSession] = None
+    ) -> Optional[RateLimitTokenImpl]:
+        result = await self.acquire_token_for_rate_limit_by_subjects_receiving_result(*subject, session=session)
+        return result.token
+
+    async def acquire_token_for_rate_limit_by_subjects_receiving_result(
+            self, *subject: str,
+            session: Optional[AsyncSession] = None
+    ) -> AcquireTokenResult:
         assert len(subject) > 0, "require at least one subject"
         user = subject[0]
 
         async with use_session_or_create(session) as sess:
             tokens = []
+            violating_rules = []
 
             # 先获取所有rule，再对每个rule获取token
             rules = [x async for x in self.get_rate_limit_rules_by_subject(*subject, session=sess)]
@@ -235,14 +237,32 @@ class ServiceRateLimitImpl(Generic[T_Service], IServiceRateLimit):
                 else:
                     logger.debug(f"[rate limit] limit reached for rule {rule.id} "
                                  f"(service: {rule.service}, subject: {rule.subject})")
-                    for t in tokens:
-                        await self._retire_token(t, session=sess)
-                    return None
+                    violating_rules.append(rule)
 
                 if rule.overwrite:
                     break
 
-            return RateLimitTokenImpl(tokens, self)
+            success = len(violating_rules) == 0
+            if not success:
+                for t in tokens:
+                    await self._retire_token(t, session=sess)
+
+                first_expire_token = None
+                for rule in violating_rules:
+                    _first_expire_token = await self._get_first_expire_token(rule, user, session=session)
+                    if first_expire_token is None or _first_expire_token.expire_time < first_expire_token.expire_time:
+                        first_expire_token = _first_expire_token
+
+                return AcquireTokenResult(
+                    success=False,
+                    violating=violating_rules,
+                    available_time=first_expire_token.expire_time
+                )
+            else:
+                return AcquireTokenResult(
+                    success=True,
+                    token=RateLimitTokenImpl(tokens, self)
+                )
 
     @classmethod
     async def clear_rate_limit_tokens(cls, *, session: Optional[AsyncSession] = None):
@@ -251,25 +271,3 @@ class ServiceRateLimitImpl(Generic[T_Service], IServiceRateLimit):
             result = await sess.execute(stmt)
             await sess.commit()
             logger.debug(f"deleted {result.rowcount} rate limit token(s)")
-
-
-@scheduler.scheduled_job(IntervalTrigger(minutes=10), id="delete_outdated_tokens")
-async def _delete_outdated_tokens():
-    async with AsyncSession(get_engine()) as session:
-        now = datetime.utcnow()
-        stmts = []
-        async for rule in await session.stream_scalars(select(RateLimitRuleOrm)):
-            stmt = (delete(RateLimitTokenOrm)
-                    .where(RateLimitTokenOrm.rule_id == rule.id,
-                           RateLimitTokenOrm.acquire_time < now - timedelta(seconds=rule.time_span))
-                    .execution_options(synchronize_session=False))
-            stmts.append(stmt)
-
-        rowcount = 0
-        for stmt in stmts:
-            result = await session.execute(stmt)
-            rowcount += result.rowcount
-
-        await session.commit()
-
-        logger.debug(f"deleted {rowcount} outdated rate limit token(s)")

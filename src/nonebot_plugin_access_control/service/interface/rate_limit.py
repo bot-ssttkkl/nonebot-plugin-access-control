@@ -1,6 +1,8 @@
 from abc import ABC, abstractmethod
+from datetime import datetime
 from datetime import timedelta
 from typing import AsyncGenerator, Optional
+from typing import NamedTuple, Sequence
 
 from nonebot import Bot
 from nonebot.internal.adapter import Event
@@ -12,6 +14,13 @@ from ...event_bus import T_Listener
 class IRateLimitToken:
     async def retire(self):
         ...
+
+
+class AcquireTokenResult(NamedTuple):
+    success: bool
+    token: Optional[IRateLimitToken] = None
+    violating: Optional[Sequence[RateLimitRule]] = None
+    available_time: Optional[datetime] = None
 
 
 class IServiceRateLimit(ABC):
@@ -56,7 +65,15 @@ class IServiceRateLimit(ABC):
         ...
 
     @abstractmethod
+    async def acquire_token_for_rate_limit_receiving_result(self, bot: Bot, event: Event) -> AcquireTokenResult:
+        ...
+
+    @abstractmethod
     async def acquire_token_for_rate_limit_by_subjects(self, *subject: str) -> Optional[IRateLimitToken]:
+        ...
+
+    @abstractmethod
+    async def acquire_token_for_rate_limit_by_subjects_receiving_result(self, bot: Bot, event: Event) -> AcquireTokenResult:
         ...
 
     @classmethod
