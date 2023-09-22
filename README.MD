@@ -9,7 +9,7 @@
 nonebot-plugin-access-control
 ============
 
-_✨ Nonebot 权限控制 ✨_
+_✨ Nonebot 权限控制插件 ✨_
 
 </div>
 
@@ -33,6 +33,8 @@ _✨ Nonebot 权限控制 ✨_
 - 插件适配
     - [x] 支持**功能级别**的细粒度控制
     - [x] 支持对权限开关等事件进行订阅
+- 拓展
+    - [x] 支持开发者拓展定义新的主体
 
 ## 使用
 
@@ -347,6 +349,48 @@ async def _(bot: Bot, event: Event, matcher: Matcher):
 **调用事件接收函数时通过具名参数传参，因此事件接收函数的参数必须严格遵循参数名。**
 
 事件订阅示例：[src/nonebot_plugin_ac_demo/event_demo.py](src/nonebot_plugin_ac_demo/event_demo.py)
+
+## 拓展定义新的主体
+
+主体提取器（Subject Extractor）用于提取事件发出用户所具有的主体。开发者可以在自己的插件中注册自定义的主体提取器，从而实现拓展定义新的主体。
+
+主体提取器为一个函数（或可调用对象），其应该具有如下的函数签名，并通过`add_subject_extractor`装饰器注入到插件中：
+
+```python
+@add_subject_extractor
+def your_custom_subject_extractor(bot: Bot, event: Event, current: Sequence[str]) -> Sequence[str]:
+    ...
+```
+
+传入参数`bot`与`event`其义自明，而`current`参数表明当前阶段已经被提取出的主体，返回值表示经过该轮处理后提取出的主体。
+
+在主体提取流程，插件会**按顺序依次**调用已注册的主体提取器，每一轮中，将上一轮的返回值作为这一轮传入的`current`参数，并取最后一轮的返回值作为事件的主体。请注意维护主体提取器注册的顺序。（tips：如果你的主体提取器依赖其他插件中实现的主体提取器，可以依赖`nonebot`提供的`require`机制控制主体提取器注册的顺序）
+
+例如，下面这个主体提取器用于为群管理/群主提取相应的主体：
+
+```python
+def extract_onebot_v11_group_role(bot: Bot, event: Event, current: Sequence[str]) -> Sequence[str]:
+    if bot.type != "OneBot V11":
+        return
+
+    li = [*current]
+
+    group_id = getattr(event, "group_id", None)
+    sender: Optional['Sender'] = getattr(event, "sender", None)
+
+    if group_id is not None and sender is not None:
+        # 添加群管理/群主的subject
+        idx = li.index("qq:g{group_id}")
+        if sender.role == 'owner':
+            li.insert(f"qq:g{group_id}.group_owner", idx+1)
+            li.insert(f"qq:group_owner", idx+1)
+
+        if sender.role == 'owner' or sender.role == 'admin':
+            li.insert(f"qq:g{group_id}.group_admin", idx+1)
+            li.insert(f"qq:group_admin", idx+1)
+
+    return li
+```
 
 ## 配置项
 

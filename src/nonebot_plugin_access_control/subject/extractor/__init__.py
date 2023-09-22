@@ -14,7 +14,7 @@ extractor_chain = SubjectExtractorChain(
 )
 
 
-def add_extractor(extractor: SubjectExtractor) -> SubjectExtractor:
+def add_subject_extractor(extractor: SubjectExtractor) -> SubjectExtractor:
     extractor_chain.add(extractor)
     return extractor
 
@@ -31,5 +31,5 @@ def extract_subjects_from_session(session: Session) -> List[str]:
     return sbj
 
 
-__all__ = ("SubjectExtractor", "add_extractor",
+__all__ = ("SubjectExtractor", "add_subject_extractor",
            "extract_subjects", "extract_subjects_from_session")

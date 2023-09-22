@@ -7,7 +7,7 @@ if TYPE_CHECKING:
     from nonebot.adapters.onebot.v11.event import Sender
 
 
-def extract_onebot_v11_group_role(bot: Bot, event: Event, current: Sequence[str]):
+def extract_onebot_v11_group_role(bot: Bot, event: Event, current: Sequence[str]) -> Sequence[str]:
     if bot.type != "OneBot V11":
         return
 
