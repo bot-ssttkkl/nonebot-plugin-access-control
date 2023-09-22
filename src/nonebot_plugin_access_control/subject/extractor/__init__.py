@@ -5,6 +5,7 @@ from nonebot.internal.adapter import Event
 from nonebot_plugin_session import Session
 
 from .base import T_SubjectExtractor, SubjectExtractorChain
+from .builtin.kaiheila import extract_kaiheila_role
 from .builtin.onebot_v11 import extract_onebot_v11_group_role
 from .builtin.qqguild import extract_qqguild_role
 from .builtin.session import extract_by_session, extract_from_session
@@ -12,7 +13,8 @@ from .builtin.session import extract_by_session, extract_from_session
 extractor_chain = SubjectExtractorChain(
     extract_by_session,
     extract_onebot_v11_group_role,
-    extract_qqguild_role
+    extract_qqguild_role,
+    extract_kaiheila_role
 )
 
 
