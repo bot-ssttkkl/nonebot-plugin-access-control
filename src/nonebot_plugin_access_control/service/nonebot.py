@@ -5,7 +5,7 @@ from nonebot import logger
 
 from .base import Service
 from .plugin import PluginService
-from ..errors import AccessControlError
+from ..errors import AccessControlError, AccessControlQueryError
 
 
 class NoneBotService(Service[None, PluginService]):
@@ -41,9 +41,11 @@ class NoneBotService(Service[None, PluginService]):
     def create_plugin_service(self, plugin_name: str) -> PluginService:
         return self._create_plugin_service(plugin_name, auto_create=False)
 
-    def get_plugin_service(self, plugin_name: str) -> Optional[PluginService]:
+    def get_plugin_service(self, plugin_name: str, *, raise_on_not_exists: bool = False) -> Optional[PluginService]:
         if plugin_name in self._plugin_services:
             return self._plugin_services[plugin_name]
+        if raise_on_not_exists:
+            raise AccessControlQueryError(f"找不到服务 {plugin_name}")
         return None
 
     def get_or_create_plugin_service(self, plugin_name: str) -> PluginService:
@@ -56,7 +58,7 @@ class NoneBotService(Service[None, PluginService]):
             else:
                 raise AccessControlError('No such plugin')
 
-    def get_service_by_qualified_name(self, qualified_name: str) -> Optional[Service]:
+    def get_service_by_qualified_name(self, qualified_name: str, *, raise_on_not_exists: bool = False) -> Optional[Service]:
         if qualified_name == 'nonebot':
             return self
 
@@ -64,6 +66,8 @@ class NoneBotService(Service[None, PluginService]):
         service: Optional[Service] = self.get_plugin_service(seg[0])
         for i in range(1, len(seg)):
             if service is None:
+                if raise_on_not_exists:
+                    raise AccessControlQueryError(f"找不到服务 {qualified_name}")
                 return None
             service = service.get_child(seg[i])
         return service

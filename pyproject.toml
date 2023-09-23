@@ -1,3 +1,7 @@
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
 [tool.poetry]
 name = "nonebot-plugin-access-control"
 version = "0.6.4"
@@ -20,10 +24,11 @@ shortuuid = ">=1.0.11"
 nonebot-plugin-alconna = "^0.24.0"
 pytimeparser = "^0.2.0"
 
+nb-cli = { version = ">=1.2.0", optional = true }
+ssttkkl-nonebot-utils = {path = "C:/Users/huang/PycharmProjects/ssttkkl-nonebot-utils"}
 
 [tool.poetry.group.dev.dependencies]
-nonebot-plugin-datastore = {extras = ["cli"], version = "^1.1.0"}
-nb-cli = "^1.2.2"
+nonebot-plugin-datastore = { extras = ["cli"], version = "^1.1.0" }
 nonebot-adapter-onebot = "*"
 nonebot-adapter-kaiheila = "*"
 nonebot-adapter-qqguild = "*"
@@ -33,9 +38,12 @@ nonebot-adapter-feishu = "*"
 asyncpg = "^0.27.0"
 setuptools = "^68.1.2"
 
-[build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+[tool.poetry.extras]
+cli = ["nb-cli"]
+
+[tool.poetry.plugins.nb_scripts]
+accctrl = "nonebot_plugin_access_control.script:install"
 
 [tool.nonebot]
-plugins = ["nonebot_plugin_access_control", "nonebot_plugin_ac_demo"]
+plugins = ["nonebot_plugin_access_control"]
+plugin_dirs = []

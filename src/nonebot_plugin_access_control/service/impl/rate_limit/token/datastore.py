@@ -1,3 +1,7 @@
+from nonebot import require
+
+require("nonebot_plugin_apscheduler")
+
 from datetime import datetime
 from typing import Optional
 

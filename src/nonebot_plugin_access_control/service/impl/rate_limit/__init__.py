@@ -14,7 +14,7 @@ from .token.datastore import DataStoreTokenStorage
 from ...interface import IService
 from ...interface.rate_limit import IServiceRateLimit, IRateLimitToken, AcquireTokenResult
 from ...rate_limit import RateLimitRule, RateLimitSingleToken
-from ....errors import AccessControlValueError
+from ....errors import AccessControlBadRequestError, AccessControlQueryError
 from ....event_bus import T_Listener, EventType, on_event, fire_event
 from ....models import RateLimitTokenOrm, RateLimitRuleOrm
 from ....subject import extract_subjects
@@ -142,8 +142,7 @@ class ServiceRateLimitImpl(Generic[T_Service], IServiceRateLimit):
                 cnt = (await sess.execute(stmt)).scalar_one()
 
                 if cnt > 0:
-                    raise AccessControlValueError('adding an overwrite rule with same subject and service '
-                                                  'that already used by other rules is forbidden')
+                    raise AccessControlQueryError('已存在对该实体与服务的限流规则，不允许再添加覆写规则')
 
             orm = RateLimitRuleOrm(subject=subject, service=self.service.qualified_name,
                                    time_span=int(time_span.total_seconds()),
