@@ -6,26 +6,31 @@ nonebot-plugin-access-control
 @GitHub         : https://github.com/ssttkkl/nonebot-access-control
 """
 from nonebot import require
+
+require("ssttkkl_nonebot_utils")
+
 from nonebot.plugin import PluginMetadata
 
-from .config import conf, Config
-
-require("nonebot_plugin_alconna")
-require("nonebot_plugin_apscheduler")
-require("nonebot_plugin_datastore")
-require("nonebot_plugin_session")
-
-from nonebot_plugin_session import __plugin_meta__ as plugin_session_meta
-
-from . import matchers
-from . import patcher
+from .alc import help_ac
+from .config import Config
 
 __plugin_meta__ = PluginMetadata(
     name="权限控制",
     description="对功能进行权限控制以及调用次数限制",
-    usage=matchers.cmd.__help_text__,
+    usage=help_ac(),
     type="application",
     homepage="https://github.com/bot-ssttkkl/nonebot-access-control",
     config=Config,
-    supported_adapters=plugin_session_meta.supported_adapters
+    supported_adapters={
+        "~onebot.v11",
+        "~onebot.v12",
+        "~console",
+        "~kaiheila",
+        "~qqguild",
+        "~telegram",
+        "~feishu",
+    },
 )
+
+from . import patcher
+from . import matcher

@@ -204,12 +204,12 @@ async def check(matcher: Matcher, bot: Bot, event: Event):
     try:
         await service.check(bot, event, throw_on_fail=True)
     except PermissionDeniedError:
-        if conf.access_control_reply_on_permission_denied_enabled:
-            await matcher.send(conf.access_control_reply_on_permission_denied)
+        if conf().access_control_reply_on_permission_denied_enabled:
+            await matcher.send(conf().access_control_reply_on_permission_denied)
         raise IgnoredException("permission denied (by nonebot_plugin_access_control)")
     except RateLimitedError as e:
-        if conf.access_control_reply_on_rate_limited_enabled:
-            msg = conf.access_control_reply_on_rate_limited
+        if conf().access_control_reply_on_rate_limited_enabled:
+            msg = conf().access_control_reply_on_rate_limited
             if msg is None:
                 now = datetime.utcnow()
                 available_time = e.result.available_time

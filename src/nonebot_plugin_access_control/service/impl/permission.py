@@ -170,7 +170,7 @@ class ServicePermissionImpl(Generic[T_Service], IServicePermission):
             if p is not None:
                 allow = p.allow
             else:
-                allow = conf.access_control_default_permission == 'allow'
+                allow = conf().access_control_default_permission == 'allow'
             await self._fire_service_change_permission(subject, allow, sess)
 
             return True
@@ -183,7 +183,7 @@ class ServicePermissionImpl(Generic[T_Service], IServicePermission):
                              f"(service: {p.service}, subject: {p.subject})")
                 return p.allow
             else:
-                allow = conf.access_control_default_permission == 'allow'
+                allow = conf().access_control_default_permission == 'allow'
                 logger.debug(f"[permission] {'allowed' if allow else 'denied'} (default) "
                              f"(service: {self.service.qualified_name})")
                 return allow

@@ -35,6 +35,8 @@ _✨ Nonebot 权限控制插件 ✨_
     - [x] 支持对权限开关等事件进行订阅
 - 拓展
     - [x] 支持开发者拓展定义新的主体
+- CLI插件
+    - [x] 支持通过控制台中执行`nb accctrl`进入权限控制台
 
 ## 使用
 
@@ -42,17 +44,21 @@ _✨ Nonebot 权限控制插件 ✨_
 
 #### 概念
 
-当我们对用户进行权限控制时，我们想要的是针对拥有某种同样身份的所有用户进行配置，而不是对每一个具体用户分别配置。因此，我们引入主体的概念。 **主体（Subject）代表了拥有某种同样身份的用户的集合，也是设置权限的基本单位。** 当我们说用户具有某个主体，也就是说用户在该主体所代表的集合内。换句话说，主体就是一个用户所具有的身份。
+当我们对用户进行权限控制时，我们想要的是针对拥有某种同样身份的所有用户进行配置，而不是对每一个具体用户分别配置。因此，我们引入主体的概念。
+**主体（Subject）代表了拥有某种同样身份的用户的集合，也是设置权限的基本单位。**
+当我们说用户具有某个主体，也就是说用户在该主体所代表的集合内。换句话说，主体就是一个用户所具有的身份。
 
 一个用户通常拥有多个主体。举个例子：QQ上群组G的用户U发送了一条消息，该用户同时具有“用户U”、“群组G成员”、“QQ用户”、“Bot用户”这几个主体。同时QQ上群组G的用户V也发送了一条消息，该用户该用户同时具有“用户V”、“群组G成员”、“QQ用户”、“Bot用户”这几个主体。
 
-当设置权限时，我们直接针对一个主体进行设置。当鉴权时，我们对用户的所有主体**按优先级从高到低的顺序**，逐一检查是否设置了权限。一旦检查到某个主体设置了权限，就以该主体设置的权限作为该用户的权限。
+当设置权限时，我们直接针对一个主体进行设置。当鉴权时，我们对用户的所有主体**按优先级从高到低的顺序**
+，逐一检查是否设置了权限。一旦检查到某个主体设置了权限，就以该主体设置的权限作为该用户的权限。
 
 回到上面的例子，假设我们对主体”群组G“禁用服务，但是对主体”用户V“启用服务。则用户U在群组G内将无法使用服务，但是用户V在群组G内可以使用。
 
 在插件使用中，我们用一个字符串表示主体，例如`qq:12345678`表示QQ用户12345678、`qq:g87654321`表示QQ群组87654321。
 
-我们约定：`all`表示所有用户、`superuser`表示超级用户、`<平台名>`表示所有此平台的用户、`<协议名>`表示所有此协议的用户、所有与平台相关的主体均以`<平台名>:`开头、所有与协议相关的主体均以`<协议名>:`开头。
+我们约定：`all`表示所有用户、`superuser`表示超级用户、`<平台名>`表示所有此平台的用户、`<协议名>`
+表示所有此协议的用户、所有与平台相关的主体均以`<平台名>:`开头、所有与协议相关的主体均以`<协议名>:`开头。
 
 插件依赖[nonebot-plugin-session](https://github.com/noneplugin/nonebot-plugin-session)提取事件的主体，各适配器的主体定义如下：
 
@@ -61,7 +67,6 @@ _✨ Nonebot 权限控制插件 ✨_
 - [Kaiheila](docs/kaiheila.md)
 - [QQ Guild](docs/qqguild.md)
 - Telegram：未测试，参考OneBot V12的定义
-
 
 ### 服务
 
@@ -75,9 +80,11 @@ _✨ Nonebot 权限控制插件 ✨_
 
 当某主体需要检查某服务是否可用时，将从该服务开始检查是否为该主体配置了权限，若未配置则检查其父服务，以此类推直到检查到根节点nonebot。
 
-换句话说，当鉴权时，我们逐一对用户的所有主体**按优先级从高到低的顺序**，**按服务的节点深度从深到浅的顺序**检查该服务及其所有祖先节点配置的权限。因此，在节点深度较浅的服务配置的高优先级的主体配置，也会覆盖在节点深度较深的服务配置的低优先级的主体配置。
+换句话说，当鉴权时，我们逐一对用户的所有主体**按优先级从高到低的顺序**，**按服务的节点深度从深到浅的顺序**
+检查该服务及其所有祖先节点配置的权限。因此，在节点深度较浅的服务配置的高优先级的主体配置，也会覆盖在节点深度较深的服务配置的低优先级的主体配置。
 
 通过指令可查看所有服务及子服务层级：
+
 - `/ac service ls`：列出所有服务与子服务层级
 - `/ac service ls --srv <服务>`：列出服务的子服务层级
 
@@ -90,6 +97,7 @@ _✨ Nonebot 权限控制插件 ✨_
 ### 鉴权
 
 通过指令可实现权限开关：
+
 - `/ac permission allow --sbj <主体> --srv <服务>`：为主体启用服务
 - `/ac permission deny --sbj <主体> --srv <服务>`：为主体禁用服务
 - `/ac permission rm --sbj <主体> --srv <服务>`：为主体删除服务权限配置
@@ -106,7 +114,9 @@ _✨ Nonebot 权限控制插件 ✨_
 
 限流规则同样是针对服务及主体的。与鉴权不同的是，限流规则是串联的。应用在一个用户拥有的所有主体的限流规则，与应用在一个服务及其所有祖先服务的限流规则，会同时对用户产生限制。
 
-举个例子，如果我们设置了”主体`all`每天最多调用100次`nonebot`服务“，”主体`qq:g87654321`每分钟最多调用5次`nonebot_plugin_pixivbot`服务“。一位拥有`qq:12345678`、`qq:g87654321`、`qq`、`all`这四个主体的用户尝试调用`nonebot_plugin_pixivbot.xxx`服务时，将同时受到以上两条规则的限制。
+举个例子，如果我们设置了”主体`all`每天最多调用100次`nonebot`服务“，”主体`qq:g87654321`
+每分钟最多调用5次`nonebot_plugin_pixivbot`服务“。一位拥有`qq:12345678`、`qq:g87654321`、`qq`、`all`
+这四个主体的用户尝试调用`nonebot_plugin_pixivbot.xxx`服务时，将同时受到以上两条规则的限制。
 
 如果我不希望这样的串联，该怎么办？通过为规则设置”覆写“属性，可以覆盖掉所有优先级低于该规则的规则。规则的优先级比较规则如下：
 
@@ -114,13 +124,15 @@ _✨ Nonebot 权限控制插件 ✨_
 - 否则，按照服务的父子关系，父服务优先级低于子服务
 
 通过指令可对限流规则进行操作：
- - `/ac limit add --sbj <主体> --srv <服务> --limit <次数> --span <时间间隔> [--overwrite]`：为主体与服务添加限流规则（`--overwrite`：为规则设置”覆写“属性）
- - `/ac limit rm <规则ID>`：删除限流规则
- - `/ac limit ls`：列出所有已配置的限流规则
- - `/ac limit ls --sbj <主体>`：列出主体已配置的限流规则
- - `/ac limit ls --srv <服务>`：列出服务已配置的限流规则
- - `/ac limit ls --sbj <主体> --srv <服务>`：列出主体与服务已配置的限流规则
- - `/ac limit reset`：重置限流计数
+
+- `/ac limit add --sbj <主体> --srv <服务> --limit <次数> --span <时间间隔> [--overwrite]`
+  ：为主体与服务添加限流规则（`--overwrite`：为规则设置”覆写“属性）
+- `/ac limit rm <规则ID>`：删除限流规则
+- `/ac limit ls`：列出所有已配置的限流规则
+- `/ac limit ls --sbj <主体>`：列出主体已配置的限流规则
+- `/ac limit ls --srv <服务>`：列出服务已配置的限流规则
+- `/ac limit ls --sbj <主体> --srv <服务>`：列出主体与服务已配置的限流规则
+- `/ac limit reset`：重置限流计数
 
 其中`<服务>`的格式同上
 
@@ -237,7 +249,8 @@ from nonebot_plugin_access_control.service import create_plugin_service
 plugin_service = create_plugin_service("nonebot_plugin_ac_demo")
 ```
 
-3. 通过PluginService.create_subservice创建SubService实例。调用`Service.patch_matcher()`应用至Matcher，或在事件处理函数上应用装饰器`Service.patch_handle()`。（二选一）
+3. 通过PluginService.create_subservice创建SubService实例。调用`Service.patch_matcher()`
+   应用至Matcher，或在事件处理函数上应用装饰器`Service.patch_handle()`。（二选一）
 
 ```python
 group1 = plugin_service.create_subservice("group1")
@@ -319,18 +332,18 @@ async def _(bot: Bot, event: Event, matcher: Matcher):
     if not await d_service.check(bot, event, acquire_rate_limit_token=False):
         # 没有权限
         await matcher.finish()
-        
+
     token = await d_service.acquire_token_for_rate_limit(bot, event)
     if token is None:
         # 已达到限流次数上线
         await matcher.finish()
-    
+
     ok = do_your_logic()
-    
+
     if not ok:
         # 功能执行失败时，收回限流消耗的次数
         await token.retire()
-    
+
     await matcher.send("c")
 ```
 
@@ -364,7 +377,9 @@ def your_custom_subject_extractor(bot: Bot, event: Event, current: Sequence[str]
 
 传入参数`bot`与`event`其义自明，而`current`参数表明当前阶段已经被提取出的主体，返回值表示经过该轮处理后提取出的主体。
 
-在主体提取流程，插件会**按顺序依次**调用已注册的主体提取器，每一轮调用时，将上一轮的返回值作为这一轮传入的`current`参数，并取最后一轮的返回值作为事件的主体。请注意维护主体提取器注册的顺序。（tips：如果你的主体提取器依赖其他插件中实现的主体提取器，可以依赖`nonebot`提供的`require`机制控制主体提取器注册的顺序）
+在主体提取流程，插件会**按顺序依次**调用已注册的主体提取器，每一轮调用时，将上一轮的返回值作为这一轮传入的`current`
+参数，并取最后一轮的返回值作为事件的主体。请注意维护主体提取器注册的顺序。（tips：如果你的主体提取器依赖其他插件中实现的主体提取器，可以依赖`nonebot`
+提供的`require`机制控制主体提取器注册的顺序）
 
 例如，下面这个主体提取器用于为OneBot V11协议中群管理/群主提取相应的主体：
 
@@ -393,6 +408,10 @@ def extract_onebot_v11_group_role(bot: Bot, event: Event, current: Sequence[str]
 
 ```
 
+## CLI支持
+
+可以通过控制台中执行`nb accctrl`进入权限控制台，使用方式与`/ac`指令类似。
+
 ## 配置项
 
 ### datastore_database_url
@@ -415,29 +434,65 @@ def extract_onebot_v11_group_role(bot: Bot, event: Event, current: Sequence[str]
 
 是否启用对未适配插件的权限控制
 
+类型：`bool`
+
 默认值：`False`
 
 ### access_control_auto_patch_ignore
 
 对指定的未适配插件将不启用权限控制
 
+类型：`List[str]`
+
 默认值：`[]`
+
+### access_control_reply_on_permission_denied_enabled
+
+因无权限而拒绝执行时，是否向用户回复消息
+
+类型：`bool`
+
+默认值：`False`
 
 ### access_control_reply_on_permission_denied
 
-因无权限而拒绝执行时向用户回复的消息（None则不回复）
+因无权限而拒绝执行时向用户回复的消息
 
-默认值：`None`
+类型：`str`
+
+默认值：`"你没有权限执行该指令"`
+
+### access_control_reply_on_rate_limited_enabled
+
+因到达最大次数而拒绝执行时，是否向用户回复消息
+
+类型：`bool`
+
+默认值：`False`
 
 ### access_control_reply_on_rate_limited
 
-因到达最大次数而拒绝执行时向用户回复的消息（None则不回复）
+因到达最大次数而拒绝执行时向用户回复的消息
 
-默认值：`None`
+类型：`str`
+
+### access_control_rate_limit_token_storage
+
+限流计数使用的存储方式，支持内存存储（inmemory）与数据库存储（datastore）。
+
+内存存储会在重启后重置限流计数，数据库存储则不会。同时数据库存储还能够实现多个NoneBot实例共享限流计数，适用于分布式Bot应用。
+
+在性能上，内存存储优于数据库存储。默认使用的是内存存储。
+
+可选值：`inmemory`, `datastore`
+
+默认值：`inmemory`
 
 ## Q&A
 
-### **本插件与[nonebot_plugin_rauthman](https://github.com/Lancercmd/nonebot_plugin_rauthman)和[nonebot-plugin-manager](https://github.com/nonepkg/nonebot-plugin-manager)等其他权限管理插件有什么差别？**
+### **本插件与[nonebot_plugin_rauthman](https://github.com/Lancercmd/nonebot_plugin_rauthman)
+
+和[nonebot-plugin-manager](https://github.com/nonepkg/nonebot-plugin-manager)等其他权限管理插件有什么差别？**
 
 [nonebot_plugin_rauthman](https://github.com/Lancercmd/nonebot_plugin_rauthman)
 支持功能级别的细粒度权限控制，但是需要插件进行适配，对于未适配插件不起作用。[nonebot-plugin-manager](https://github.com/nonepkg/nonebot-plugin-manager)

@@ -1,3 +1,7 @@
+from nonebot import require
+
+require("nonebot_plugin_session")
+
 from typing import Sequence
 
 from nonebot import Bot, logger

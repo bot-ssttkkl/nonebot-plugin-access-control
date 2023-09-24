@@ -3,7 +3,7 @@ from nonebot import logger, get_driver, get_loaded_plugins
 from .config import conf
 from .service import get_nonebot_service
 
-if conf.access_control_auto_patch_enabled:
+if conf().access_control_auto_patch_enabled:
     @get_driver().on_startup
     def _():
         nonebot_service = get_nonebot_service()
@@ -11,7 +11,7 @@ if conf.access_control_auto_patch_enabled:
         patched_plugins = []
 
         for plugin in get_loaded_plugins():
-            if plugin.name == 'nonebot_plugin_access_control' or plugin.name in conf.access_control_auto_patch_ignore:
+            if plugin.name == 'nonebot_plugin_access_control' or plugin.name in conf().access_control_auto_patch_ignore:
                 continue
 
             service = nonebot_service.get_or_create_plugin_service(plugin.name)

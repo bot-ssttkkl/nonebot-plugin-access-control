@@ -1,0 +1,40 @@
+from importlib.metadata import version
+from sys import stdout, stdin
+
+import anyio
+from nb_cli import run_sync
+from nb_cli.cli import run_async
+
+from .. import __plugin_meta__ as plugin_meta
+from ..handler import handle_ac
+from ..handler.utils.env import set_script_env
+
+welcome_text = '\n\n' + f"""
+nonebot-plugin-access-control v{version("nonebot_plugin_access_control")}
+{plugin_meta.homepage}
+
+输入 \'help\' 获取帮助
+""".strip() + '\n'
+
+
+@run_async
+async def main():
+    print(welcome_text)
+    while True:
+        print("> ", end="", flush=True)
+        cmd = stdin.readline().strip()
+        if cmd == "exit":
+            return
+        elif cmd == "clear":
+            for i in range(50):
+                print()
+        elif cmd == "":
+            continue
+        else:
+            await handle_ac(stdout, "ac " + cmd)
+            stdout.write("\n")
+
+
+def install():
+    set_script_env()
+    anyio.run(run_sync(main))
