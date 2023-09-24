@@ -1915,20 +1915,18 @@ version = "0.1.16"
 description = ""
 category = "main"
 optional = false
-python-versions = "^3.8"
-files = []
-develop = false
+python-versions = ">=3.8,<4.0"
+files = [
+    {file = "ssttkkl_nonebot_utils-0.1.16-py3-none-any.whl", hash = "sha256:e98d4403fd4d51060aae620e5e1e310dff68ec8490f72d9183118b0e2910c575"},
+    {file = "ssttkkl_nonebot_utils-0.1.16.tar.gz", hash = "sha256:f7487ac625c54d63f75db48cdc16da97741a06e5171a096b2bf28769fb1d3519"},
+]
 
 [package.dependencies]
-asyncache = "^0.3.1"
-cachetools = "^5.3.1"
-nonebot-plugin-send-anything-anywhere = "^0.3.0"
+asyncache = ">=0.3.1,<0.4.0"
+cachetools = ">=5.3.1,<6.0.0"
+nonebot-plugin-send-anything-anywhere = ">=0.3.0,<0.4.0"
 nonebot-plugin-session = ">=0.1.0"
-nonebot2 = "^2.0.0"
-
-[package.source]
-type = "directory"
-url = "../ssttkkl-nonebot-utils"
+nonebot2 = ">=2.0.0,<3.0.0"
 
 [[package]]
 name = "starlette"
@@ -2492,4 +2490,4 @@ cli = ["nb-cli"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.8"
-content-hash = "608580fec74d7a79fc7137bdfc3af23720e5a10342baf4233fccb003e60ee0f5"
+content-hash = "3487e6406d18880af8857c98f064c468c5c373c5bf9bf253e5bc103954ad1b4a"

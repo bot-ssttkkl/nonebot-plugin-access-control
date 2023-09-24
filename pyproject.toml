@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "nonebot-plugin-access-control"
-version = "0.6.4"
+version = "0.7.0"
 description = ""
 authors = ["ssttkkl <huang.wen.long@hotmail.com>"]
 license = "MIT"
@@ -23,9 +23,9 @@ nonebot-plugin-session = ">=0.1.0"
 shortuuid = ">=1.0.11"
 nonebot-plugin-alconna = "^0.24.0"
 pytimeparser = "^0.2.0"
+ssttkkl-nonebot-utils = ">=0.1.16"
 
 nb-cli = { version = ">=1.2.0", optional = true }
-ssttkkl-nonebot-utils = {path = "C:/Users/huang/PycharmProjects/ssttkkl-nonebot-utils"}
 
 [tool.poetry.group.dev.dependencies]
 nonebot-plugin-datastore = { extras = ["cli"], version = "^1.1.0" }
