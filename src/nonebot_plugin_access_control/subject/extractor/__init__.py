@@ -28,13 +28,21 @@ def add_subject_extractor(extractor: T_SubjectExtractor) -> T_SubjectExtractor:
 
 
 def extract_subjects(bot: Bot, event: Event) -> Sequence[str]:
-    sbj = extractor_chain(bot, event, [])
+    sbj = [
+        x.content
+        for x in
+        extractor_chain(bot, event, [])
+    ]
     logger.debug("subjects: " + ', '.join(sbj))
     return sbj
 
 
 def extract_subjects_from_session(session: Session) -> Sequence[str]:
-    sbj = extract_from_session(session)
+    sbj = [
+        x.content
+        for x in
+        extract_from_session(session)
+    ]
     logger.debug("subjects: " + ', '.join(sbj))
     return sbj
 

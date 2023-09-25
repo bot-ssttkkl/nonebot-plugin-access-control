@@ -1,17 +1,19 @@
-from typing import TYPE_CHECKING, Optional, Sequence
+from typing import TYPE_CHECKING, Optional, Sequence, List
 
 from nonebot import Bot
 from nonebot.internal.adapter import Event
 
+from ...SubjectModel import SubjectModel
+
 if TYPE_CHECKING:
     from nonebot.adapters.kaiheila.event import User, Event as KaiheilaEvent
 
+OFFER_BY = "nonebot_plugin_access_control"
 
-def extract_kaiheila_role(bot: Bot, event: Event, current: Sequence[str]) -> Sequence[str]:
+
+def extract_kaiheila_role(bot: Bot, event: Event, current: Sequence[SubjectModel]) -> Sequence[SubjectModel]:
     if bot.type != "Kaiheila":
         return current
-
-    li = [*current]
 
     event: KaiheilaEvent
 
@@ -20,9 +22,19 @@ def extract_kaiheila_role(bot: Bot, event: Event, current: Sequence[str]) -> Seq
     author: Optional['User'] = event.extra.author
 
     if author is not None:
-        # 添加qqguild:role_xxx的subject（在"kaiheila:g{guild_id}:c{channel_id}"之前）
-        idx = li.index(f"kaiheila:g{guild_id}:c{channel_id}")
-        for role in reversed(sorted(author.roles)):
-            li.insert(idx, f"kaiheila:g{guild_id}.role_{role}")
+        li = []
 
-    return li
+        for role in sorted(author.roles):
+            li.append(SubjectModel(f"kaiheila:g{guild_id}.role_{role}", OFFER_BY,
+                                   f"kaiheila:guild.role"))
+
+        # 添加在platform_guild_channel之前
+        idx = 0
+        for i in range(len(current)):
+            if current[i].tag == "platform:guild:channel":
+                idx = i
+                break
+
+        current = [*current[:idx], *li, *current[idx:]]
+
+    return current
