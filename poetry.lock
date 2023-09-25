@@ -91,19 +91,19 @@ zookeeper = ["kazoo"]
 
 [[package]]
 name = "arclet-alconna"
-version = "1.7.22"
+version = "1.7.24"
 description = "A High-performance, Generality, Humane Command Line Arguments Parser Library."
 category = "main"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "arclet_alconna-1.7.22-py3-none-any.whl", hash = "sha256:7591d8a191bab7b8e59dfe933c3be4a937e13044500ea25618281f9e17d34f18"},
-    {file = "arclet_alconna-1.7.22.tar.gz", hash = "sha256:68c408b249f8c2cd15675e315aa6beb4050bcd40bcb275ce126a98886c465275"},
+    {file = "arclet_alconna-1.7.24-py3-none-any.whl", hash = "sha256:fe2fcfd170da7985810f1bd68051288b56f586f08b154d744c7db4fba890d94e"},
+    {file = "arclet_alconna-1.7.24.tar.gz", hash = "sha256:e10fce577be3de3f326890a0a80410a83fad41adff71db241007bb43b09ba846"},
 ]
 
 [package.dependencies]
 nepattern = ">=0.5.14,<0.6.0"
-tarina = ">=0.3.3"
+tarina = ">=0.4.1"
 typing-extensions = ">=4.5.0"
 
 [package.extras]
