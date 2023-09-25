@@ -371,11 +371,22 @@ async def _(bot: Bot, event: Event, matcher: Matcher):
 
 ```python
 @add_subject_extractor
-def your_custom_subject_extractor(bot: Bot, event: Event, current: Sequence[str]) -> Sequence[str]:
+def your_custom_subject_extractor(bot: Bot, event: Event, current: Sequence[SubjectModel]) -> Sequence[SubjectModel]:
     ...
 ```
 
 传入参数`bot`与`event`其义自明，而`current`参数表明当前阶段已经被提取出的主体，返回值表示经过该轮处理后提取出的主体。
+
+主体的模型定义如下：
+
+```python
+class SubjectModel(NamedTuple):
+    content: str
+    offer_by: str
+    tag: Optional[str]
+```
+
+其中content为主体字符串，offer_by用于标识提取出该主体的主体提取器（通常为插件名），tag用于标识主体的种类。通常我们约定，拥有同一个tag的主体包含的信息量完全一致。
 
 在主体提取流程，插件会**按顺序依次**调用已注册的主体提取器，每一轮调用时，将上一轮的返回值作为这一轮传入的`current`
 参数，并取最后一轮的返回值作为事件的主体。请注意维护主体提取器注册的顺序。（tips：如果你的主体提取器依赖其他插件中实现的主体提取器，可以依赖`nonebot`
@@ -384,28 +395,41 @@ def your_custom_subject_extractor(bot: Bot, event: Event, current: Sequence[str]
 例如，下面这个主体提取器用于为OneBot V11协议中群管理/群主提取相应的主体：
 
 ```python
-def extract_onebot_v11_group_role(bot: Bot, event: Event, current: Sequence[str]) -> Sequence[str]:
+OFFER_BY = "nonebot_plugin_access_control"
+
+
+def extract_onebot_v11_group_role(bot: Bot, event: Event, current: Sequence[SubjectModel]) -> Sequence[SubjectModel]:
     if bot.type != "OneBot V11":
         return current
-
-    li = [*current]
 
     group_id = getattr(event, "group_id", None)
     sender: Optional['Sender'] = getattr(event, "sender", None)
 
     if group_id is not None and sender is not None:
-        # 添加群管理/群主的subject（在"qq:g{group_id}"之前）
-        idx = li.index(f"qq:g{group_id}")
+        li = []
+
         if sender.role == 'owner':
-            li.insert(idx, f"qq:group_owner")
-            li.insert(idx, f"qq:g{group_id}.group_owner")
+            li.append(SubjectModel(f"qq:g{group_id}.group_owner", OFFER_BY,
+                                   f"qq:group.group_owner"))
+            li.append(SubjectModel(f"qq:group_owner", OFFER_BY,
+                                   f"qq:group_owner"))
 
         if sender.role == 'owner' or sender.role == 'admin':
-            li.insert(idx, f"qq:group_admin")
-            li.insert(idx, f"qq:g{group_id}.group_admin")
+            li.append(SubjectModel(f"qq:g{group_id}.group_admin", OFFER_BY,
+                                   f"qq:group.group_admin"))
+            li.append(SubjectModel(f"qq:group_admin", OFFER_BY,
+                                   f"qq:group_admin"))
 
-    return li
+        # 添加在platform:group之前
+        idx = 0
+        for i in range(len(current)):
+            if current[i].tag == "platform:group":
+                idx = i
+                break
 
+        current = [*current[:idx], *li, *current[idx:]]
+
+    return current
 ```
 
 ## CLI支持

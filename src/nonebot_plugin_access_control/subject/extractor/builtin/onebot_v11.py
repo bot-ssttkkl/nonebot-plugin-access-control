@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING, Optional, Sequence
 from nonebot import Bot
 from nonebot.internal.adapter import Event
 
-from ...SubjectModel import SubjectModel
+from ...model import SubjectModel
 
 if TYPE_CHECKING:
     from nonebot.adapters.onebot.v11.event import Sender

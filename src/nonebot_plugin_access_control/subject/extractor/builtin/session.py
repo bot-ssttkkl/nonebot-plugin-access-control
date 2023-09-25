@@ -4,7 +4,7 @@ from nonebot import Bot
 from nonebot.internal.adapter import Event
 from nonebot_plugin_session import extract_session, SessionLevel, Session
 
-from ...SubjectModel import SubjectModel
+from ...model import SubjectModel
 from ....utils.superuser import is_superuser
 
 OFFER_BY = "nonebot_plugin_access_control"

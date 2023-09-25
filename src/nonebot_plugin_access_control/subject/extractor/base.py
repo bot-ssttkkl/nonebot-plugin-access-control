@@ -3,7 +3,7 @@ from typing import Sequence, Callable
 from nonebot import Bot, logger
 from nonebot.internal.adapter import Event
 
-from ..SubjectModel import SubjectModel
+from ..model import SubjectModel
 
 T_SubjectExtractor = Callable[[Bot, Event, Sequence[SubjectModel]], Sequence[SubjectModel]]
 
