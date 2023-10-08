@@ -2,7 +2,7 @@ from nonebot import require
 
 require("nonebot_plugin_session")
 
-from typing import Sequence
+from collections.abc import Sequence
 
 from nonebot import Bot, logger
 from nonebot.internal.adapter import Event
@@ -18,7 +18,7 @@ extractor_chain = SubjectExtractorChain(
     extract_by_session,
     extract_onebot_v11_group_role,
     extract_qqguild_role,
-    extract_kaiheila_role
+    extract_kaiheila_role,
 )
 
 
@@ -28,24 +28,20 @@ def add_subject_extractor(extractor: T_SubjectExtractor) -> T_SubjectExtractor:
 
 
 def extract_subjects(bot: Bot, event: Event) -> Sequence[str]:
-    sbj = [
-        x.content
-        for x in
-        extractor_chain(bot, event, [])
-    ]
-    logger.debug("subjects: " + ', '.join(sbj))
+    sbj = [x.content for x in extractor_chain(bot, event, [])]
+    logger.debug("subjects: " + ", ".join(sbj))
     return sbj
 
 
 def extract_subjects_from_session(session: Session) -> Sequence[str]:
-    sbj = [
-        x.content
-        for x in
-        extract_from_session(session)
-    ]
-    logger.debug("subjects: " + ', '.join(sbj))
+    sbj = [x.content for x in extract_from_session(session)]
+    logger.debug("subjects: " + ", ".join(sbj))
     return sbj
 
 
-__all__ = ("T_SubjectExtractor", "add_subject_extractor",
-           "extract_subjects", "extract_subjects_from_session")
+__all__ = (
+    "T_SubjectExtractor",
+    "add_subject_extractor",
+    "extract_subjects",
+    "extract_subjects_from_session",
+)

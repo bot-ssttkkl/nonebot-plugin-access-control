@@ -9,20 +9,26 @@ from .plugin_service import plugin_service
 
 @plugin_service.on_set_permission
 async def _(service: Service, permission: Permission):
-    logger.debug(f"on set permission: {service} {permission.subject}, now allow={permission.allow}")
+    logger.debug(
+        f"on set permission: {service} {permission.subject}, "
+        f"now allow={permission.allow}"
+    )
 
 
 @plugin_service.on_remove_permission
 async def _(service: Service, subject: str):
     allow = await service.get_permission_by_subject(subject)
-    logger.debug(f"on remove permission: {service} {subject}, now allow={allow}")
+    logger.debug(f"on remove permission: {service} {subject}, " f"now allow={allow}")
 
 
 @a_service.on_change_permission
 @b_service.on_change_permission
 @c_service.on_change_permission
 async def _(service: Service, permission: Permission):
-    logger.debug(f"on change permission: {service} {permission.subject}, now allow={permission.allow}")
+    logger.debug(
+        f"on change permission: {service} {permission.subject}, "
+        f"now allow={permission.allow}"
+    )
 
 
 @a_service.on_add_rate_limit_rule

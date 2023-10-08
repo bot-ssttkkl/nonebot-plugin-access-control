@@ -4,8 +4,13 @@ from arclet.alconna import Arparma
 from arclet.alconna.typing import DataCollection
 from ssttkkl_nonebot_utils.errors.error_handler import ErrorHandlers
 
-from . import permission_handler, limit_handler, help_handler, service_handler, subject_handler
-from .. import config
+from . import (
+    permission_handler,
+    limit_handler,
+    help_handler,
+    service_handler,
+    subject_handler,
+)
 from ..alc import alc_ac
 from ..config import conf
 from ..errors import AccessControlBadRequestError, PermissionDeniedError
@@ -58,14 +63,14 @@ async def _handle_permission(fout: TextIO, result: Arparma[DataCollection]):
             fout,
             result.all_matched_args.get("service"),
             result.all_matched_args.get("subject"),
-            True
+            True,
         )
     elif deny:
         await permission_handler.set_(
             fout,
             result.all_matched_args.get("service"),
             result.all_matched_args.get("subject"),
-            False
+            False,
         )
     elif rm:
         await permission_handler.rm(

@@ -10,12 +10,14 @@ from .. import __plugin_meta__ as plugin_meta
 from ..handler import handle_ac
 from ..handler.utils.env import set_script_env
 
-welcome_text = '\n\n' + f"""
+
+welcome_text = f"""
 nonebot-plugin-access-control v{version("nonebot_plugin_access_control")}
 {plugin_meta.homepage}
 
 输入 \'help\' 获取帮助
-""".strip() + '\n'
+""".strip()
+welcome_text = "\n\n" + welcome_text + "\n"
 
 
 @run_async

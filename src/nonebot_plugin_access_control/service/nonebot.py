@@ -1,4 +1,5 @@
-from typing import Dict, Collection, Optional
+from typing import Optional
+from collections.abc import Collection
 
 import nonebot
 from nonebot import logger
@@ -11,7 +12,7 @@ from ..errors import AccessControlError, AccessControlQueryError
 class NoneBotService(Service[None, PluginService]):
     def __init__(self):
         super().__init__()
-        self._plugin_services: Dict[str, PluginService] = {}
+        self._plugin_services: dict[str, PluginService] = {}
 
     @property
     def name(self) -> str:
@@ -29,7 +30,9 @@ class NoneBotService(Service[None, PluginService]):
     def children(self) -> Collection[PluginService]:
         return self._plugin_services.values()
 
-    def _create_plugin_service(self, plugin_name: str, auto_create: bool) -> PluginService:
+    def _create_plugin_service(
+        self, plugin_name: str, auto_create: bool
+    ) -> PluginService:
         if plugin_name in self._plugin_services:
             raise ValueError(f"{plugin_name} already created")
 
@@ -41,7 +44,9 @@ class NoneBotService(Service[None, PluginService]):
     def create_plugin_service(self, plugin_name: str) -> PluginService:
         return self._create_plugin_service(plugin_name, auto_create=False)
 
-    def get_plugin_service(self, plugin_name: str, *, raise_on_not_exists: bool = False) -> Optional[PluginService]:
+    def get_plugin_service(
+        self, plugin_name: str, *, raise_on_not_exists: bool = False
+    ) -> Optional[PluginService]:
         if plugin_name in self._plugin_services:
             return self._plugin_services[plugin_name]
         if raise_on_not_exists:
@@ -56,13 +61,15 @@ class NoneBotService(Service[None, PluginService]):
             if plugin is not None:
                 return self._create_plugin_service(plugin_name, auto_create=True)
             else:
-                raise AccessControlError('No such plugin')
+                raise AccessControlError("No such plugin")
 
-    def get_service_by_qualified_name(self, qualified_name: str, *, raise_on_not_exists: bool = False) -> Optional[Service]:
-        if qualified_name == 'nonebot':
+    def get_service_by_qualified_name(
+        self, qualified_name: str, *, raise_on_not_exists: bool = False
+    ) -> Optional[Service]:
+        if qualified_name == "nonebot":
             return self
 
-        seg = qualified_name.split('.')
+        seg = qualified_name.split(".")
         service: Optional[Service] = self.get_plugin_service(seg[0])
         for i in range(1, len(seg)):
             if service is None:

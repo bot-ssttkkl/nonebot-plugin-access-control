@@ -16,7 +16,7 @@ async def send_multipart(matcher: Matcher, content: str):
     msg = ""
     for line in lines:
         msg += line
-        msg += '\n'
+        msg += "\n"
         line_cnt += 1
         if line_cnt == 20:
             await matcher.send(msg.strip())
@@ -28,7 +28,9 @@ async def send_multipart(matcher: Matcher, content: str):
 
 
 @cmd.handle()
-async def handle_cmd(matcher: Matcher, cmd_space: str = CommandWhitespace(), cmd_body=CommandArg()):
+async def handle_cmd(
+    matcher: Matcher, cmd_space: str = CommandWhitespace(), cmd_body=CommandArg()
+):
     if len(cmd_space) == 0:  # 避免指令撞车
         return
 

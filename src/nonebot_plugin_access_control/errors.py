@@ -15,7 +15,7 @@ class PermissionDeniedError(AccessControlError):
 
 
 class RateLimitedError(AccessControlError):
-    def __init__(self, result: 'AcquireTokenResult'):
+    def __init__(self, result: "AcquireTokenResult"):
         self.result = result
 
 

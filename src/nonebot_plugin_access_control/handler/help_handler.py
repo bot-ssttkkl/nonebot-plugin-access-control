@@ -6,7 +6,5 @@ from ..alc import help_ac
 
 
 @require_superuser_or_script
-async def help(
-        f: TextIO
-):
+async def help(f: TextIO):
     f.write(help_ac(get_env()))

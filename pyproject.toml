@@ -56,10 +56,10 @@ extra_standard_library = ["typing_extensions"]
 
 [tool.ruff]
 select = ["E", "W", "F", "UP", "C", "T", "PYI", "PT", "Q"]
-ignore = ["C901"]
+ignore = ["C901", "E402", "F403", "T201"]
 
-line-length = 88
-target-version = "py38"
+line-length = 160
+target-version = "py39"
 
 [tool.ruff.flake8-pytest-style]
 fixture-parentheses = false

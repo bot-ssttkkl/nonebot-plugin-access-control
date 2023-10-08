@@ -29,5 +29,5 @@ __plugin_meta__ = PluginMetadata(
     extra={"orm_version_location": migrations},
 )
 
-from . import patcher
-from . import matcher
+from . import patcher  # noqa
+from . import matcher  # noqa

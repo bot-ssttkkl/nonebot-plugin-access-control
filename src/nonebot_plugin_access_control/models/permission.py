@@ -3,7 +3,7 @@ from sqlalchemy.orm import Mapped, mapped_column, MappedAsDataclass
 
 
 class PermissionOrm(MappedAsDataclass, Model):
-    __tablename__ = 'nonebot_plugin_access_control_permission'
+    __tablename__ = "nonebot_plugin_access_control_permission"
     __table_args__ = {"extend_existing": True}
 
     subject: Mapped[str] = mapped_column(primary_key=True)

@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import TypeVar, Generic
 
-T_SubService = TypeVar('T_SubService', bound="ISubServiceOwner", covariant=True)
+T_SubService = TypeVar("T_SubService", bound="ISubServiceOwner", covariant=True)
 
 
 class ISubServiceOwner(Generic[T_SubService], ABC):

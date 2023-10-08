@@ -2,7 +2,8 @@ from asyncio import gather
 from collections import defaultdict
 from enum import Enum
 from inspect import isawaitable, signature
-from typing import Dict, List, Callable, Awaitable, Any, Tuple, Optional, TypeVar
+from typing import Callable, Any, Optional, TypeVar
+from collections.abc import Awaitable
 
 from nonebot import logger
 
@@ -34,11 +35,11 @@ class EventType(str, Enum):
 
 
 T = TypeVar("T")
-T_Kwargs = Dict[str, Any]
+T_Kwargs = dict[str, Any]
 T_Filter = Callable[..., bool]
 T_Listener = Callable[..., Awaitable[None]]
 
-_listeners: Dict[EventType, List[Tuple[T_Filter, T_Listener]]] = defaultdict(list)
+_listeners: dict[EventType, list[tuple[T_Filter, T_Listener]]] = defaultdict(list)
 
 
 def _call_with_kwargs(func: Callable[..., T], kwargs: T_Kwargs) -> T:
@@ -52,7 +53,10 @@ def _call_with_kwargs(func: Callable[..., T], kwargs: T_Kwargs) -> T:
 
 
 async def fire_event(event_type: EventType, kwargs: T_Kwargs):
-    logger.trace(f"on event {event_type}  (kwargs: {', '.join(map(lambda k: f'{k}={kwargs[k]}', kwargs))})")
+    logger.trace(
+        f"on event {event_type}  "
+        f"(kwargs: {', '.join((f'{k}={kwargs[k]}' for k in kwargs))})"
+    )
 
     coros = []
 
@@ -65,7 +69,9 @@ async def fire_event(event_type: EventType, kwargs: T_Kwargs):
     await gather(*coros)
 
 
-def on_event(event_type: EventType, filter_func: T_Filter, func: Optional[T_Listener] = None):
+def on_event(
+    event_type: EventType, filter_func: T_Filter, func: Optional[T_Listener] = None
+):
     def decorator(func):
         _listeners[event_type].append((filter_func, func))
         return func

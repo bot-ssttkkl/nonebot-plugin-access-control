@@ -7,22 +7,27 @@ from ..service.permission import Permission
 
 
 def _map_permission(p: Permission, query_service_name: Optional[str] = None) -> str:
-    s = f"\'{p.service.qualified_name}\'"
+    s = f"'{p.service.qualified_name}'"
 
     if p.allow:
         s += " 允许 "
     else:
         s += " 拒绝 "
 
-    s += f"\'{p.subject}\'"
-    if query_service_name is not None and p.service.qualified_name != query_service_name:
-        s += f" (继承自服务 \'{p.service.qualified_name}\')"
+    s += f"'{p.subject}'"
+    if (
+        query_service_name is not None
+        and p.service.qualified_name != query_service_name
+    ):
+        s += f" (继承自服务 '{p.service.qualified_name}')"
 
     return s
 
 
 @require_superuser_or_script
-async def set_(f: TextIO, service_name: Optional[str], subject: Optional[str], allow: bool):
+async def set_(
+    f: TextIO, service_name: Optional[str], subject: Optional[str], allow: bool
+):
     if not subject or not service_name:
         raise AccessControlBadRequestError("请指定服务名（--service）与主体（--subject）")
 
@@ -60,10 +65,12 @@ async def ls(f: TextIO, service_name: Optional[str], subject: Optional[str]):
 
     if len(permissions) != 0:
         # 按照服务全称、先allow再deny、subject排序
-        permissions = sorted(permissions, key=lambda x: (x.service.qualified_name, x.allow, x.subject))
+        permissions = sorted(
+            permissions, key=lambda x: (x.service.qualified_name, x.allow, x.subject)
+        )
 
         for p in permissions:
             f.write(_map_permission(p, service_name))
-            f.write('\n')
+            f.write("\n")
     else:
         f.write("无")

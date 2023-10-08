@@ -40,10 +40,7 @@ alc_ac = Alconna(
             Option("--span", Args["span", str]),
             Option("--overwrite", action=store_true, default=False),
         ),
-        Subcommand(
-            "rm",
-            Args["limit_rule_id", str]
-        ),
+        Subcommand("rm", Args["limit_rule_id", str]),
         Subcommand(
             "ls",
             Option("--srv|--service", Args["service;?", str]),
@@ -51,29 +48,26 @@ alc_ac = Alconna(
         ),
         Subcommand(
             "reset",
-        )
+        ),
     ),
     Subcommand(
         "service",
         Subcommand(
             "ls",
             Option("--srv|--service", Args["service;?", str]),
-        )
+        ),
     ),
-    Subcommand(
-        "subject"
-    ),
-    Subcommand(
-        "help"
-    )
+    Subcommand("subject"),
+    Subcommand("help"),
 )
 
 
-def help_ac(env: 'T_ENV' = "nonebot") -> str:
+def help_ac(env: "T_ENV" = "nonebot") -> str:
     result = ""
 
     if env == "nonebot":
-        result += "进行控制的指令为`/ac`，仅超级用户可用。（通过在配置文件中设置`SUPERUSERS`变量可配置超级用户）\n\n"
+        result += "进行控制的指令为`/ac`，仅超级用户可用。"
+        result += "（通过在配置文件中设置`SUPERUSERS`变量可配置超级用户）\n\n"
 
     if env == "nonebot":
         cmd_start = "/ac "
@@ -110,6 +104,6 @@ def help_ac(env: 'T_ENV' = "nonebot") -> str:
 - `nonebot`：对整个NoneBot进行开关
 - `<插件名>`：对整个插件进行开关
 - `<插件名>.<子服务名>.<子服务名>.....<子服务名>`：对插件内的某个子服务进行开关
-    """.strip()
+    """.strip()  # noqa: E501
 
     return result
