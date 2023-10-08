@@ -15,20 +15,19 @@ packages = [
 ]
 
 [tool.poetry.dependencies]
-python = "^3.8"
-nonebot2 = ">=2.0.0"
-nonebot-plugin-datastore = ">=1.0.0"
-nonebot-plugin-apscheduler = ">=0.2.0"
-nonebot-plugin-session = ">=0.1.0"
-shortuuid = ">=1.0.11"
-nonebot-plugin-alconna = "^0.24.0"
+python = "^3.9"
+nonebot2 = "^2.1.0"
+nonebot-plugin-apscheduler = ">=0.3.0"
+nonebot-plugin-session = "^0.2.0b1"
+nonebot-plugin-orm = "^0.1.1"
+arclet-alconna = "^1.7.24"
+shortuuid = "^1.0.11"
 pytimeparser = "^0.2.0"
-ssttkkl-nonebot-utils = ">=0.1.16"
+ssttkkl-nonebot-utils = ">=0.1.17"
 
 nb-cli = { version = ">=1.2.0", optional = true }
 
 [tool.poetry.group.dev.dependencies]
-nonebot-plugin-datastore = { extras = ["cli"], version = "^1.1.0" }
 nonebot-adapter-onebot = "*"
 nonebot-adapter-kaiheila = "*"
 nonebot-adapter-qqguild = "*"
@@ -37,6 +36,7 @@ nonebot-adapter-console = "*"
 nonebot-adapter-feishu = "*"
 asyncpg = "^0.27.0"
 setuptools = "^68.1.2"
+nb-cli = "^1.2.5"
 
 [tool.poetry.extras]
 cli = ["nb-cli"]

@@ -1,11 +1,10 @@
 from datetime import datetime
 from typing import List
 
+from nonebot_plugin_orm import Model
 from shortuuid import ShortUUID
 from sqlalchemy import Index, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship, MappedAsDataclass
-
-from nonebot_plugin_access_control.plugin_data import plugin_data
 
 _shortuuid = ShortUUID(alphabet="23456789abcdefghijkmnopqrstuvwxyz")
 
@@ -14,7 +13,7 @@ def _gen_id():
     return _shortuuid.random(length=5)
 
 
-class RateLimitRuleOrm(MappedAsDataclass, plugin_data.Model):
+class RateLimitRuleOrm(MappedAsDataclass, Model):
     __tablename__ = 'nonebot_plugin_access_control_rate_limit_rule'
     __table_args__ = (
         Index("ix_ac_rate_limit_rule_subject_service", "subject", "service"),
@@ -34,7 +33,7 @@ class RateLimitRuleOrm(MappedAsDataclass, plugin_data.Model):
                                                              cascade="delete")
 
 
-class RateLimitTokenOrm(MappedAsDataclass, plugin_data.Model):
+class RateLimitTokenOrm(MappedAsDataclass, Model):
     __tablename__ = 'nonebot_plugin_access_control_rate_limit_token'
     __table_args__ = (
         Index("ix_ac_rate_limit_token_rule_id", "rule_id"),

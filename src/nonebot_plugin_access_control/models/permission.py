@@ -1,9 +1,8 @@
+from nonebot_plugin_orm import Model
 from sqlalchemy.orm import Mapped, mapped_column, MappedAsDataclass
 
-from nonebot_plugin_access_control.plugin_data import plugin_data
 
-
-class PermissionOrm(MappedAsDataclass, plugin_data.Model):
+class PermissionOrm(MappedAsDataclass, Model):
     __tablename__ = 'nonebot_plugin_access_control_permission'
     __table_args__ = {"extend_existing": True}
 
