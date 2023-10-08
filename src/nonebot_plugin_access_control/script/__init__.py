@@ -8,7 +8,7 @@ from nonebot_plugin_orm import init_orm
 
 from .. import __plugin_meta__ as plugin_meta
 from ..handler import handle_ac
-from ..handler.utils.env import set_script_env
+from ..handler.utils.env import ac_set_script_env
 
 
 welcome_text = f"""
@@ -40,5 +40,5 @@ async def main():
 
 
 def install():
-    set_script_env()
+    ac_set_script_env()
     anyio.run(run_sync(main))
