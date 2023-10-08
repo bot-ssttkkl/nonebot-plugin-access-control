@@ -10,7 +10,7 @@ from ..permission import Permission
 from ...config import conf
 from ...event_bus import T_Listener, on_event, EventType, fire_event
 from ...models import PermissionOrm
-from ...utils.session import use_session_or_create
+from ...utils.session import use_ac_session
 
 T_Service = TypeVar("T_Service", bound=IService)
 
@@ -36,65 +36,58 @@ class ServicePermissionImpl(Generic[T_Service], IServicePermission):
 
     @staticmethod
     async def _get_permissions(service: Optional[T_Service],
-                               subject: Optional[str],
-                               session: AsyncSession) -> AsyncGenerator[Permission, None]:
-        stmt = select(PermissionOrm)
-        if service is not None:
-            stmt = stmt.where(PermissionOrm.service == service.qualified_name)
-        if subject is not None:
-            stmt = stmt.where(PermissionOrm.subject == subject)
+                               subject: Optional[str]) -> AsyncGenerator[Permission, None]:
+        async with use_ac_session() as session:
+            stmt = select(PermissionOrm)
+            if service is not None:
+                stmt = stmt.where(PermissionOrm.service == service.qualified_name)
+            if subject is not None:
+                stmt = stmt.where(PermissionOrm.subject == subject)
 
-        async for x in await session.stream_scalars(stmt):
-            s = service
-            if s is None:
-                from ..methods import get_service_by_qualified_name
-                s = get_service_by_qualified_name(x.service)
-            if s is not None:
-                yield Permission(s, x.subject, x.allow)
+            async for x in await session.stream_scalars(stmt):
+                s = service
+                if s is None:
+                    from ..methods import get_service_by_qualified_name
+                    s = get_service_by_qualified_name(x.service)
+                if s is not None:
+                    yield Permission(s, x.subject, x.allow)
 
-    async def get_permission_by_subject(self, *subject: str, trace: bool = True,
-                                        session: Optional[AsyncSession] = None) -> Optional[Permission]:
-        async with use_session_or_create(session) as sess:
-            for sub in subject:
-                if trace:
-                    for node in self.service.trace():
-                        async for p in self._get_permissions(node, sub, sess):
-                            return p
-                else:
-                    async for p in self._get_permissions(self.service, sub, sess):
-                        return p
-
-            return None
-
-    async def get_permissions(self, *, trace: bool = True,
-                              session: Optional[AsyncSession] = None) -> AsyncGenerator[Permission, None]:
-        async with use_session_or_create(session) as sess:
+    async def get_permission_by_subject(self, *subject: str, trace: bool = True) -> Optional[Permission]:
+        for sub in subject:
             if trace:
                 for node in self.service.trace():
-                    async for p in self._get_permissions(node, None, sess):
-                        yield p
+                    async for p in self._get_permissions(node, sub):
+                        return p
             else:
-                async for p in self._get_permissions(self.service, None, sess):
+                async for p in self._get_permissions(self.service, sub):
+                    return p
+
+        return None
+
+    async def get_permissions(self, *, trace: bool = True) -> AsyncGenerator[Permission, None]:
+        if trace:
+            for node in self.service.trace():
+                async for p in self._get_permissions(node, None):
                     yield p
+        else:
+            async for p in self._get_permissions(self.service, None):
+                yield p
 
     @classmethod
     async def get_all_permissions_by_subject(
-            cls, *subject: str,
-            session: Optional[AsyncSession] = None
+            cls, *subject: str
     ) -> AsyncGenerator[Permission, None]:
         overridden_services = set()
-        async with use_session_or_create(session) as sess:
-            for sub in subject:
-                async for x in cls._get_permissions(None, sub, sess):
-                    if x.service not in overridden_services:
-                        yield x
-                        overridden_services.add(x.service)
+        for sub in subject:
+            async for x in cls._get_permissions(None, sub):
+                if x.service not in overridden_services:
+                    yield x
+                    overridden_services.add(x.service)
 
     @classmethod
-    async def get_all_permissions(cls, *, session: Optional[AsyncSession] = None) -> AsyncGenerator[Permission, None]:
-        async with use_session_or_create(session) as sess:
-            async for x in cls._get_permissions(None, None, sess):
-                yield x
+    async def get_all_permissions(cls) -> AsyncGenerator[Permission, None]:
+        async for x in cls._get_permissions(None, None):
+            yield x
 
     async def _fire_service_set_permission(self, subject: str, allow: bool):
         await fire_event(EventType.service_set_permission, {
@@ -119,7 +112,7 @@ class ServicePermissionImpl(Generic[T_Service], IServicePermission):
                 continue
 
             cnt = 0
-            async for x in self._get_permissions(node, subject, session):
+            async for x in self._get_permissions(node, subject):
                 cnt += 1
 
             if cnt == 0:
@@ -128,8 +121,8 @@ class ServicePermissionImpl(Generic[T_Service], IServicePermission):
                     "permission": Permission(node, subject, allow),
                 })
 
-    async def set_permission(self, subject: str, allow: bool, session: Optional[AsyncSession] = None) -> bool:
-        async with use_session_or_create(session) as sess:
+    async def set_permission(self, subject: str, allow: bool) -> bool:
+        async with use_ac_session() as sess:
             stmt = (select(PermissionOrm)
                     .where(PermissionOrm.service == self.service.qualified_name,
                            PermissionOrm.subject == subject))
@@ -152,8 +145,8 @@ class ServicePermissionImpl(Generic[T_Service], IServicePermission):
             else:
                 return False
 
-    async def remove_permission(self, subject: str, session: Optional[AsyncSession] = None) -> bool:
-        async with use_session_or_create(session) as sess:
+    async def remove_permission(self, subject: str) -> bool:
+        async with use_ac_session() as sess:
             stmt = (select(PermissionOrm)
                     .where(PermissionOrm.service == self.service.qualified_name,
                            PermissionOrm.subject == subject))
@@ -175,15 +168,14 @@ class ServicePermissionImpl(Generic[T_Service], IServicePermission):
 
             return True
 
-    async def check_permission(self, *subject: str, session: Optional[AsyncSession] = None) -> bool:
-        async with use_session_or_create(session) as sess:
-            p = await self.get_permission_by_subject(*subject, session=sess)
-            if p is not None:
-                logger.debug(f"[permission] {'allowed' if p.allow else 'denied'} "
-                             f"(service: {p.service}, subject: {p.subject})")
-                return p.allow
-            else:
-                allow = conf().access_control_default_permission == 'allow'
-                logger.debug(f"[permission] {'allowed' if allow else 'denied'} (default) "
-                             f"(service: {self.service.qualified_name})")
-                return allow
+    async def check_permission(self, *subject: str) -> bool:
+        p = await self.get_permission_by_subject(*subject)
+        if p is not None:
+            logger.debug(f"[permission] {'allowed' if p.allow else 'denied'} "
+                         f"(service: {p.service}, subject: {p.subject})")
+            return p.allow
+        else:
+            allow = conf().access_control_default_permission == 'allow'
+            logger.debug(f"[permission] {'allowed' if allow else 'denied'} (default) "
+                         f"(service: {self.service.qualified_name})")
+            return allow

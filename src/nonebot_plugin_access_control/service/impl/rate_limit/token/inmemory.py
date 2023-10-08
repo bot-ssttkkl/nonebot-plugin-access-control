@@ -63,21 +63,22 @@ class InmemoryTokenStorage(TokenStorage):
         tokens = _handle_expired(self.data.get(key) or tuple())
         self.data[key] = tuple(filter(lambda x: x.id != token.id, tokens))
 
+    async def delete_outdated_tokens(self):
+        del_keys = set()
+
+        for k in inmemory_storage.data:
+            inmemory_storage.data[k] = _handle_expired(inmemory_storage.data[k])
+            if len(inmemory_storage.data[k]) == 0:
+                del_keys.add(k)
+
+        for k in del_keys:
+            del inmemory_storage.data[k]
+
 
 inmemory_storage = InmemoryTokenStorage()
 
-
-@scheduler.scheduled_job(IntervalTrigger(minutes=1), id="delete_outdated_tokens_inmemory")
-async def _delete_outdated_tokens():
-    del_keys = set()
-
-    for k in inmemory_storage.data:
-        inmemory_storage.data[k] = _handle_expired(inmemory_storage.data[k])
-        if len(inmemory_storage.data[k]) == 0:
-            del_keys.add(k)
-
-    for k in del_keys:
-        del inmemory_storage.data[k]
+scheduler.scheduled_job(IntervalTrigger(minutes=1), id="delete_outdated_tokens_inmemory")(
+    inmemory_storage.delete_outdated_tokens)
 
 
 def get_inmemory_token_storage(**kwargs) -> TokenStorage:

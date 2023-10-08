@@ -1,17 +1,22 @@
+import contextvars
 from contextlib import asynccontextmanager
-from typing import Optional, AsyncContextManager
+from typing import AsyncContextManager
 
 from nonebot_plugin_orm import get_session
 from sqlalchemy.ext.asyncio import AsyncSession
 
+_ac_current_session = contextvars.ContextVar("ac_current_session")
+
 
 @asynccontextmanager
-async def use_session_or_create(session: Optional[AsyncSession]) -> AsyncContextManager[AsyncSession]:
-    session_provided = session is not None
-    if not session_provided:
+async def use_ac_session() -> AsyncContextManager[AsyncSession]:
+    try:
+        yield _ac_current_session.get()
+    except LookupError:
         session = get_session()
+        token = _ac_current_session.set(session)
 
-    yield session
+        yield session
 
-    if not session_provided:
         await session.close()
+        _ac_current_session.reset(token)
