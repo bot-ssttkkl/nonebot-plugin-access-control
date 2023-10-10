@@ -1,10 +1,10 @@
 from typing import TYPE_CHECKING, Optional
-from collections.abc import Sequence
 
 from nonebot import Bot
 from nonebot.internal.adapter import Event
 
 from ...model import SubjectModel
+from ...manager import SubjectManager
 
 if TYPE_CHECKING:
     from nonebot.adapters.qqguild.event import Member
@@ -16,15 +16,13 @@ PRESET_ROLES = {2: "guild_admin", 4: "guild_owner", 5: "channel_admin"}
 PRESET_ROLE_PRIORITY = (4, 2, 5)
 
 
-def extract_qqguild_role(
-    bot: Bot, event: Event, current: Sequence[SubjectModel]
-) -> Sequence[SubjectModel]:
+def extract_qqguild_role(bot: Bot, event: Event, manager: SubjectManager):
     if bot.type != "QQ Guild":
-        return current
+        return
 
     is_direct_msg = getattr(event, "src_guild_id", None) is not None
     if is_direct_msg:
-        return current
+        return
 
     guild_id: Optional[str] = getattr(event, "guild_id", None)
     channel_id: Optional[str] = getattr(event, "channel_id", None)
@@ -80,13 +78,5 @@ def extract_qqguild_role(
                     )
                 )
 
-        # 添加在platform_guild_channel之前
-        idx = 0
-        for i in range(len(current)):
-            if current[i].tag == "platform:guild:channel":
-                idx = i
-                break
-
-        current = [*current[:idx], *li, *current[idx:]]
-
-    return current
+        # 添加在platform:guild:channel之前
+        manager.insert_before("platform:guild:channel", *li)

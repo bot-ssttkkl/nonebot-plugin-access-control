@@ -2,9 +2,10 @@ from collections.abc import Sequence
 
 from nonebot import Bot
 from nonebot.internal.adapter import Event
-from nonebot_plugin_session import extract_session, SessionLevel, Session
+from nonebot_plugin_session import Session, SessionLevel, extract_session
 
 from ...model import SubjectModel
+from ...manager import SubjectManager
 from ....utils.superuser import is_superuser
 
 OFFER_BY = "nonebot_plugin_access_control"
@@ -111,8 +112,6 @@ def extract_from_session(session: Session) -> Sequence[SubjectModel]:
     return li
 
 
-def extract_by_session(
-    bot: Bot, event: Event, current: Sequence[SubjectModel]
-) -> Sequence[SubjectModel]:
+def extract_by_session(bot: Bot, event: Event, manager: SubjectManager):
     session = extract_session(bot, event)
-    return [*current, *extract_from_session(session)]
+    manager.append(*extract_from_session(session))

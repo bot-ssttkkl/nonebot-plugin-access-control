@@ -8,11 +8,12 @@ from nonebot import Bot, logger
 from nonebot.internal.adapter import Event
 from nonebot_plugin_session import Session
 
-from .base import T_SubjectExtractor, SubjectExtractorChain
-from .builtin.kaiheila import extract_kaiheila_role
-from .builtin.onebot_v11 import extract_onebot_v11_group_role
 from .builtin.qqguild import extract_qqguild_role
+from .builtin.kaiheila import extract_kaiheila_role
+from .base import T_SubjectExtractor, SubjectExtractorChain
+from .builtin.onebot_v11 import extract_onebot_v11_group_role
 from .builtin.session import extract_by_session, extract_from_session
+from ..manager import SubjectManager
 
 extractor_chain = SubjectExtractorChain(
     extract_by_session,
@@ -28,7 +29,9 @@ def add_subject_extractor(extractor: T_SubjectExtractor) -> T_SubjectExtractor:
 
 
 def extract_subjects(bot: Bot, event: Event) -> Sequence[str]:
-    sbj = [x.content for x in extractor_chain(bot, event, [])]
+    manager = SubjectManager()
+    extractor_chain(bot, event, manager)
+    sbj = [x.content for x in manager.subjects]
     logger.debug("subjects: " + ", ".join(sbj))
     return sbj
 

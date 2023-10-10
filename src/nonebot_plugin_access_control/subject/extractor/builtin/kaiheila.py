@@ -1,22 +1,21 @@
 from typing import TYPE_CHECKING, Optional
-from collections.abc import Sequence
 
 from nonebot import Bot
 from nonebot.internal.adapter import Event
 
 from ...model import SubjectModel
+from ...manager import SubjectManager
 
 if TYPE_CHECKING:
-    from nonebot.adapters.kaiheila.event import User, Event as KaiheilaEvent
+    from nonebot.adapters.kaiheila.event import User
+    from nonebot.adapters.kaiheila.event import Event as KaiheilaEvent
 
 OFFER_BY = "nonebot_plugin_access_control"
 
 
-def extract_kaiheila_role(
-    bot: Bot, event: Event, current: Sequence[SubjectModel]
-) -> Sequence[SubjectModel]:
+def extract_kaiheila_role(bot: Bot, event: Event, manager: SubjectManager):
     if bot.type != "Kaiheila":
-        return current
+        return
 
     event: KaiheilaEvent
 
@@ -34,13 +33,5 @@ def extract_kaiheila_role(
                 )
             )
 
-        # 添加在platform_guild_channel之前
-        idx = 0
-        for i in range(len(current)):
-            if current[i].tag == "platform:guild:channel":
-                idx = i
-                break
-
-        current = [*current[:idx], *li, *current[idx:]]
-
-    return current
+        # 添加在platform:guild:channel之前
+        manager.insert_before("platform:guild:channel", *li)
