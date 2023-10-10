@@ -1,9 +1,9 @@
 from datetime import datetime
 
-from nonebot_plugin_orm import Model
 from shortuuid import ShortUUID
+from nonebot_plugin_orm import Model
 from sqlalchemy import Index, ForeignKey
-from sqlalchemy.orm import Mapped, mapped_column, relationship, MappedAsDataclass
+from sqlalchemy.orm import Mapped, MappedAsDataclass, relationship, mapped_column
 
 _shortuuid = ShortUUID(alphabet="23456789abcdefghijkmnopqrstuvwxyz")
 
@@ -13,9 +13,9 @@ def _gen_id():
 
 
 class RateLimitRuleOrm(MappedAsDataclass, Model):
-    __tablename__ = "nonebot_plugin_access_control_rate_limit_rule"
+    __tablename__ = "accctrl_rate_limit_rule"
     __table_args__ = (
-        Index("ix_ac_rate_limit_rule_subject_service", "subject", "service"),
+        Index("ix_accctrl_rate_limit_rule_subject_service", "subject", "service"),
         {"extend_existing": True},
     )
 
@@ -34,17 +34,15 @@ class RateLimitRuleOrm(MappedAsDataclass, Model):
 
 
 class RateLimitTokenOrm(MappedAsDataclass, Model):
-    __tablename__ = "nonebot_plugin_access_control_rate_limit_token"
+    __tablename__ = "accctrl_rate_limit_token"
     __table_args__ = (
-        Index("ix_ac_rate_limit_token_rule_id", "rule_id"),
-        Index("ix_ac_rate_limit_token_expire_time", "expire_time"),
+        Index("ix_accctrl_rate_limit_token_rule_id", "rule_id"),
+        Index("ix_accctrl_rate_limit_token_expire_time", "expire_time"),
         {"extend_existing": True},
     )
 
     id: Mapped[int] = mapped_column(init=False, primary_key=True)
-    rule_id: Mapped[str] = mapped_column(
-        ForeignKey("nonebot_plugin_access_control_rate_limit_rule.id")
-    )
+    rule_id: Mapped[str] = mapped_column(ForeignKey("accctrl_rate_limit_rule.id"))
     user: Mapped[str]
     acquire_time: Mapped[datetime] = mapped_column()
     expire_time: Mapped[datetime] = mapped_column()
