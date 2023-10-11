@@ -23,6 +23,8 @@ ssttkkl-nonebot-utils = ">=0.1.17"
 
 nb-cli = { version = ">=1.2.0", optional = true }
 
+nonebot-plugin-datastore = { version = ">=1.0.0", optional = true }
+
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.0.275"
 isort = "^5.10.1"
@@ -69,6 +71,7 @@ mark-parentheses = false
 
 [tool.poetry.extras]
 cli = ["nb-cli"]
+migrate = ["nonebot-plugin-datastore"]
 
 [tool.poetry.plugins.nb_scripts]
 accctrl = "nonebot_plugin_access_control.script:install"
