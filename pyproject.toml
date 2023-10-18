@@ -14,7 +14,7 @@ packages = [
 python = "^3.9"
 nonebot2 = "^2.1.0"
 nonebot-plugin-apscheduler = ">=0.3.0"
-nonebot-plugin-session = "^0.2.0b1"
+nonebot-plugin-session = "^0.2.0"
 nonebot-plugin-orm = "^0.1.1"
 arclet-alconna = "^1.7.24"
 shortuuid = "^1.0.11"
