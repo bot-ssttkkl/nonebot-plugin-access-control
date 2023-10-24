@@ -1,8 +1,10 @@
 from abc import ABC, abstractmethod
 from datetime import datetime
 from datetime import timedelta
-from typing import AsyncGenerator, Optional
-from typing import NamedTuple, Sequence
+from typing import Optional
+from collections.abc import AsyncGenerator
+from typing import NamedTuple
+from collections.abc import Sequence
 
 from nonebot import Bot
 from nonebot.internal.adapter import Event
@@ -33,17 +35,22 @@ class IServiceRateLimit(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def get_rate_limit_rules_by_subject(self, *subject: str,
-                                        trace: bool = True) -> AsyncGenerator[RateLimitRule, None]:
+    def get_rate_limit_rules_by_subject(
+        self, *subject: str, trace: bool = True
+    ) -> AsyncGenerator[RateLimitRule, None]:
         ...
 
     @abstractmethod
-    def get_rate_limit_rules(self, *, trace: bool = True) -> AsyncGenerator[RateLimitRule, None]:
+    def get_rate_limit_rules(
+        self, *, trace: bool = True
+    ) -> AsyncGenerator[RateLimitRule, None]:
         ...
 
     @classmethod
     @abstractmethod
-    def get_all_rate_limit_rules_by_subject(cls, *subject: str) -> AsyncGenerator[RateLimitRule, None]:
+    def get_all_rate_limit_rules_by_subject(
+        cls, *subject: str
+    ) -> AsyncGenerator[RateLimitRule, None]:
         ...
 
     @classmethod
@@ -52,8 +59,9 @@ class IServiceRateLimit(ABC):
         ...
 
     @abstractmethod
-    async def add_rate_limit_rule(self, subject: str, time_span: timedelta,
-                                  limit: int, overwrite: bool = False) -> RateLimitRule:
+    async def add_rate_limit_rule(
+        self, subject: str, time_span: timedelta, limit: int, overwrite: bool = False
+    ) -> RateLimitRule:
         ...
 
     @classmethod
@@ -61,19 +69,27 @@ class IServiceRateLimit(ABC):
         ...
 
     @abstractmethod
-    async def acquire_token_for_rate_limit(self, bot: Bot, event: Event) -> Optional[IRateLimitToken]:
+    async def acquire_token_for_rate_limit(
+        self, bot: Bot, event: Event
+    ) -> Optional[IRateLimitToken]:
         ...
 
     @abstractmethod
-    async def acquire_token_for_rate_limit_receiving_result(self, bot: Bot, event: Event) -> AcquireTokenResult:
+    async def acquire_token_for_rate_limit_receiving_result(
+        self, bot: Bot, event: Event
+    ) -> AcquireTokenResult:
         ...
 
     @abstractmethod
-    async def acquire_token_for_rate_limit_by_subjects(self, *subject: str) -> Optional[IRateLimitToken]:
+    async def acquire_token_for_rate_limit_by_subjects(
+        self, *subject: str
+    ) -> Optional[IRateLimitToken]:
         ...
 
     @abstractmethod
-    async def acquire_token_for_rate_limit_by_subjects_receiving_result(self, bot: Bot, event: Event) -> AcquireTokenResult:
+    async def acquire_token_for_rate_limit_by_subjects_receiving_result(
+        self, bot: Bot, event: Event
+    ) -> AcquireTokenResult:
         ...
 
     @classmethod

@@ -1,6 +1,7 @@
 import re
 from abc import ABC, abstractmethod
-from typing import Dict, TypeVar, Collection, Optional
+from typing import TypeVar, Optional
+from collections.abc import Collection
 
 from nonebot import logger
 
@@ -14,16 +15,16 @@ def _validate_name(name: str) -> bool:
     return match_result is not None
 
 
-T_ParentService = TypeVar('T_ParentService', bound=Optional[Service], covariant=True)
-T_ChildService = TypeVar('T_ChildService', bound='SubServiceOwner', covariant=True)
+T_ParentService = TypeVar("T_ParentService", bound=Optional[Service], covariant=True)
+T_ChildService = TypeVar("T_ChildService", bound="SubServiceOwner", covariant=True)
 
 
-class SubServiceOwner(Service[T_ParentService, T_ChildService],
-                      ISubServiceOwner[T_ChildService],
-                      ABC):
+class SubServiceOwner(
+    Service[T_ParentService, T_ChildService], ISubServiceOwner[T_ChildService], ABC
+):
     def __init__(self):
         super().__init__()
-        self._subservices: Dict[str, T_ChildService] = {}
+        self._subservices: dict[str, T_ChildService] = {}
 
     @abstractmethod
     def _make_subservice(self, name: str) -> T_ChildService:
@@ -35,13 +36,17 @@ class SubServiceOwner(Service[T_ParentService, T_ChildService],
 
     def create_subservice(self, name: str) -> T_ChildService:
         if not _validate_name(name):
-            raise AccessControlError(f'invalid name: {name}')
+            raise AccessControlError(f"invalid name: {name}")
 
         if name in self._subservices:
-            raise AccessControlError(f'subservice already exists: {self.qualified_name}.{name}')
+            raise AccessControlError(
+                f"subservice already exists: {self.qualified_name}.{name}"
+            )
 
         service = self._make_subservice(name)
         self._subservices[name] = service
-        logger.trace(f"created subservice {service.qualified_name}  (parent: {self.qualified_name})")
+        logger.trace(
+            f"created subservice {service.qualified_name}"
+            f"  (parent: {self.qualified_name})"
+        )
         return self._subservices[name]
-

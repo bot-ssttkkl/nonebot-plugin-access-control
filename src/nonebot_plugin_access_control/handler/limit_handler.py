@@ -9,23 +9,26 @@ from ..service.rate_limit import RateLimitRule
 
 
 def _map_rule(f: TextIO, rule: RateLimitRule, service_name: Optional[str]):
-    f.write(f"[{rule.id}] 服务 \'{rule.service.qualified_name}\' "
-            f"限制主体 \'{rule.subject}\' 每 {int(rule.time_span.total_seconds())} 秒钟最多调用"
-            f" {rule.limit} 次 ")
+    f.write(
+        f"[{rule.id}] 服务 '{rule.service.qualified_name}' "
+        f"限制主体 '{rule.subject}' "
+        f"每 {int(rule.time_span.total_seconds())} 秒钟"
+        f"最多调用 {rule.limit} 次 "
+    )
     if rule.overwrite:
         f.write(" (覆写)")
     if service_name is not None and rule.service.qualified_name != service_name:
-        f.write(f" (继承自服务 \'{rule.service.qualified_name}\')")
+        f.write(f" (继承自服务 '{rule.service.qualified_name}')")
 
 
 @require_superuser_or_script
 async def add(
-        f: TextIO,
-        service_name: Optional[str],
-        subject: Optional[str],
-        limit: Optional[int],
-        time_span: Optional[str],
-        overwrite: Optional[bool]
+    f: TextIO,
+    service_name: Optional[str],
+    subject: Optional[str],
+    limit: Optional[int],
+    time_span: Optional[str],
+    overwrite: Optional[bool],
 ):
     if not subject or not service_name:
         raise AccessControlBadRequestError("请指定服务名（--service）与主体（--subject）")
@@ -45,32 +48,29 @@ async def add(
     if service is None:
         raise AccessControlQueryError(f"找不到服务 {service_name}")
 
-    rule = await service.add_rate_limit_rule(subject, parsed_time_span, limit,
-                                             overwrite or False)
+    rule = await service.add_rate_limit_rule(
+        subject, parsed_time_span, limit, overwrite or False
+    )
     _map_rule(f, rule, service_name)
 
 
 @require_superuser_or_script
 async def rm(
-        f: TextIO,
-        rule_id: Optional[str],
+    f: TextIO,
+    rule_id: Optional[str],
 ):
     if not rule_id:
         raise AccessControlBadRequestError("请指定限流规则ID")
 
     ok = await Service.remove_rate_limit_rule(rule_id)
     if ok:
-        f.write('删除成功')
+        f.write("删除成功")
     else:
-        raise AccessControlQueryError('删除失败，未找到该限流规则')
+        raise AccessControlQueryError("删除失败，未找到该限流规则")
 
 
 @require_superuser_or_script
-async def ls(
-        f: TextIO,
-        service_name: Optional[str],
-        subject: Optional[str]
-):
+async def ls(f: TextIO, service_name: Optional[str], subject: Optional[str]):
     if not service_name and not subject:
         rules = [x async for x in Service.get_all_rate_limit_rules()]
     elif not service_name:
@@ -89,14 +89,14 @@ async def ls(
 
         for rule in rules:
             _map_rule(f, rule, service_name)
-            f.write('\n')
+            f.write("\n")
     else:
         f.write("无")
 
 
 @require_superuser_or_script
 async def reset(
-        f: TextIO,
+    f: TextIO,
 ):
     await Service.clear_rate_limit_tokens()
     f.write("成功")

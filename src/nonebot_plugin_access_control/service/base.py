@@ -1,12 +1,18 @@
 from abc import ABC
 from datetime import timedelta, datetime
 from functools import wraps
-from typing import Optional, Generic, TypeVar, Type, AsyncGenerator, Dict
+from typing import Optional, Generic, TypeVar
+from collections.abc import AsyncGenerator
 
 from nonebot import Bot, logger
 from nonebot.exception import IgnoredException
 from nonebot.internal.adapter import Event
-from nonebot.internal.matcher import Matcher, current_bot, current_event, current_matcher
+from nonebot.internal.matcher import (
+    Matcher,
+    current_bot,
+    current_event,
+    current_matcher,
+)
 from nonebot.message import run_preprocessor
 
 from .impl.permission import ServicePermissionImpl
@@ -20,14 +26,16 @@ from ..errors import AccessControlError, PermissionDeniedError, RateLimitedError
 from ..event_bus import T_Listener
 from ..subject import extract_subjects
 
-T_ParentService = TypeVar('T_ParentService', bound=Optional["Service"], covariant=True)
-T_ChildService = TypeVar('T_ChildService', bound="Service", covariant=True)
+T_ParentService = TypeVar("T_ParentService", bound=Optional["Service"], covariant=True)
+T_ChildService = TypeVar("T_ChildService", bound="Service", covariant=True)
 
 
-class Service(Generic[T_ParentService, T_ChildService],
-              IService["Service", T_ParentService, T_ChildService],
-              ABC):
-    _matcher_service_mapping: Dict[Type[Matcher], "Service"] = {}
+class Service(
+    Generic[T_ParentService, T_ChildService],
+    IService["Service", T_ParentService, T_ChildService],
+    ABC,
+):
+    _matcher_service_mapping: dict[type[Matcher], "Service"] = {}
 
     def __init__(self):
         self._permission_impl = ServicePermissionImpl[Service](self)
@@ -55,7 +63,7 @@ class Service(Generic[T_ParentService, T_ChildService],
                 return s
         return None
 
-    def patch_matcher(self, matcher: Type[Matcher]) -> Type[Matcher]:
+    def patch_matcher(self, matcher: type[Matcher]) -> type[Matcher]:
         self._matcher_service_mapping[matcher] = self
         logger.debug(f"patched {matcher}  (with service {self.qualified_name})")
         return matcher
@@ -70,7 +78,9 @@ class Service(Generic[T_ParentService, T_ChildService],
                 if not await self.check(bot, event, acquire_rate_limit_token=False):
                     raise PermissionDeniedError()
 
-                result = await self.acquire_token_for_rate_limit_receiving_result(bot, event)
+                result = await self.acquire_token_for_rate_limit_receiving_result(
+                    bot, event
+                )
                 if not result.success:
                     raise RateLimitedError(result)
 
@@ -88,22 +98,34 @@ class Service(Generic[T_ParentService, T_ChildService],
 
         return decorator
 
-    async def check(self, bot: Bot, event: Event,
-                    *, acquire_rate_limit_token: bool = True,
-                    throw_on_fail: bool = False) -> bool:
+    async def check(
+        self,
+        bot: Bot,
+        event: Event,
+        *,
+        acquire_rate_limit_token: bool = True,
+        throw_on_fail: bool = False,
+    ) -> bool:
         subjects = extract_subjects(bot, event)
-        return await self.check_by_subject(*subjects,
-                                           acquire_rate_limit_token=acquire_rate_limit_token,
-                                           throw_on_fail=throw_on_fail)
+        return await self.check_by_subject(
+            *subjects,
+            acquire_rate_limit_token=acquire_rate_limit_token,
+            throw_on_fail=throw_on_fail,
+        )
 
-    async def check_by_subject(self, *subjects: str,
-                               acquire_rate_limit_token: bool = True,
-                               throw_on_fail: bool = False) -> bool:
+    async def check_by_subject(
+        self,
+        *subjects: str,
+        acquire_rate_limit_token: bool = True,
+        throw_on_fail: bool = False,
+    ) -> bool:
         if not throw_on_fail:
             try:
-                await self.check_by_subject(*subjects,
-                                            acquire_rate_limit_token=acquire_rate_limit_token,
-                                            throw_on_fail=True)
+                await self.check_by_subject(
+                    *subjects,
+                    acquire_rate_limit_token=acquire_rate_limit_token,
+                    throw_on_fail=True,
+                )
                 return True
             except AccessControlError:
                 return False
@@ -113,7 +135,11 @@ class Service(Generic[T_ParentService, T_ChildService],
             raise PermissionDeniedError()
 
         if acquire_rate_limit_token:
-            result = await self.acquire_token_for_rate_limit_by_subjects_receiving_result(*subjects)
+            result = (
+                await self.acquire_token_for_rate_limit_by_subjects_receiving_result(
+                    *subjects
+                )
+            )
             if not result.success:
                 raise RateLimitedError(result)
 
@@ -126,14 +152,22 @@ class Service(Generic[T_ParentService, T_ChildService],
     def on_remove_permission(self, func: Optional[T_Listener] = None):
         return self._permission_impl.on_remove_permission(func)
 
-    async def get_permission_by_subject(self, *subject: str, trace: bool = True) -> Optional[Permission]:
-        return await self._permission_impl.get_permission_by_subject(*subject, trace=trace)
+    async def get_permission_by_subject(
+        self, *subject: str, trace: bool = True
+    ) -> Optional[Permission]:
+        return await self._permission_impl.get_permission_by_subject(
+            *subject, trace=trace
+        )
 
-    def get_permissions(self, *, trace: bool = True) -> AsyncGenerator[Permission, None]:
+    def get_permissions(
+        self, *, trace: bool = True
+    ) -> AsyncGenerator[Permission, None]:
         return self._permission_impl.get_permissions(trace=trace)
 
     @classmethod
-    def get_all_permissions_by_subject(cls, *subject: str) -> AsyncGenerator[Permission, None]:
+    def get_all_permissions_by_subject(
+        cls, *subject: str
+    ) -> AsyncGenerator[Permission, None]:
         return ServicePermissionImpl.get_all_permissions_by_subject(*subject)
 
     @classmethod
@@ -155,40 +189,66 @@ class Service(Generic[T_ParentService, T_ChildService],
     def on_remove_rate_limit_rule(self, func: Optional[T_Listener] = None):
         return self._rate_limit_impl.on_remove_rate_limit_rule(func)
 
-    def get_rate_limit_rules_by_subject(self, *subject: str,
-                                        trace: bool = True) -> AsyncGenerator[RateLimitRule, None]:
-        return self._rate_limit_impl.get_rate_limit_rules_by_subject(*subject, trace=trace)
+    def get_rate_limit_rules_by_subject(
+        self, *subject: str, trace: bool = True
+    ) -> AsyncGenerator[RateLimitRule, None]:
+        return self._rate_limit_impl.get_rate_limit_rules_by_subject(
+            *subject, trace=trace
+        )
 
-    def get_rate_limit_rules(self, *, trace: bool = True) -> AsyncGenerator[RateLimitRule, None]:
+    def get_rate_limit_rules(
+        self, *, trace: bool = True
+    ) -> AsyncGenerator[RateLimitRule, None]:
         return self._rate_limit_impl.get_rate_limit_rules(trace=trace)
 
     @classmethod
-    def get_all_rate_limit_rules_by_subject(cls, *subject: str) -> AsyncGenerator[RateLimitRule, None]:
+    def get_all_rate_limit_rules_by_subject(
+        cls, *subject: str
+    ) -> AsyncGenerator[RateLimitRule, None]:
         return ServiceRateLimitImpl.get_all_rate_limit_rules_by_subject(*subject)
 
     @classmethod
     def get_all_rate_limit_rules(cls) -> AsyncGenerator[RateLimitRule, None]:
         return ServiceRateLimitImpl.get_all_rate_limit_rules()
 
-    async def add_rate_limit_rule(self, subject: str, time_span: timedelta,
-                                  limit: int, overwrite: bool = False) -> RateLimitRule:
-        return await self._rate_limit_impl.add_rate_limit_rule(subject, time_span, limit, overwrite)
+    async def add_rate_limit_rule(
+        self, subject: str, time_span: timedelta, limit: int, overwrite: bool = False
+    ) -> RateLimitRule:
+        return await self._rate_limit_impl.add_rate_limit_rule(
+            subject, time_span, limit, overwrite
+        )
 
     @classmethod
     async def remove_rate_limit_rule(cls, rule_id: str) -> bool:
         return await ServiceRateLimitImpl.remove_rate_limit_rule(rule_id)
 
-    async def acquire_token_for_rate_limit(self, bot: Bot, event: Event) -> Optional[IRateLimitToken]:
+    async def acquire_token_for_rate_limit(
+        self, bot: Bot, event: Event
+    ) -> Optional[IRateLimitToken]:
         return await self._rate_limit_impl.acquire_token_for_rate_limit(bot, event)
 
-    async def acquire_token_for_rate_limit_receiving_result(self, bot: Bot, event: Event) -> AcquireTokenResult:
-        return await self._rate_limit_impl.acquire_token_for_rate_limit_receiving_result(bot, event)
+    async def acquire_token_for_rate_limit_receiving_result(
+        self, bot: Bot, event: Event
+    ) -> AcquireTokenResult:
+        return (
+            await self._rate_limit_impl.acquire_token_for_rate_limit_receiving_result(
+                bot, event
+            )
+        )
 
-    async def acquire_token_for_rate_limit_by_subjects(self, *subject: str) -> Optional[IRateLimitToken]:
-        return await self._rate_limit_impl.acquire_token_for_rate_limit_by_subjects(*subject)
+    async def acquire_token_for_rate_limit_by_subjects(
+        self, *subject: str
+    ) -> Optional[IRateLimitToken]:
+        return await self._rate_limit_impl.acquire_token_for_rate_limit_by_subjects(
+            *subject
+        )
 
-    async def acquire_token_for_rate_limit_by_subjects_receiving_result(self, *subject: str) -> AcquireTokenResult:
-        return await self._rate_limit_impl.acquire_token_for_rate_limit_by_subjects_receiving_result(*subject)
+    async def acquire_token_for_rate_limit_by_subjects_receiving_result(
+        self, *subject: str
+    ) -> AcquireTokenResult:
+        return await self._rate_limit_impl.acquire_token_for_rate_limit_by_subjects_receiving_result(
+            *subject
+        )
 
     @classmethod
     async def clear_rate_limit_tokens(cls):
@@ -213,7 +273,8 @@ async def check(matcher: Matcher, bot: Bot, event: Event):
             if msg is None:
                 now = datetime.utcnow()
                 available_time = e.result.available_time
-                msg = f"使用太频繁了，请稍后再试。" \
-                      '下次可用时间：{:.0f}秒后'.format(available_time.timestamp() - now.timestamp())
+                msg = "使用太频繁了，请稍后再试。" "下次可用时间：{:.0f}秒后".format(
+                    available_time.timestamp() - now.timestamp()
+                )
             await matcher.send(msg)
         raise IgnoredException("rate limited (by nonebot_plugin_access_control)")

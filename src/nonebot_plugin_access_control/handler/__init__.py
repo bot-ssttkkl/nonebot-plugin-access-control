@@ -1,11 +1,18 @@
+from contextlib import asynccontextmanager
 from typing import TextIO
 
 from arclet.alconna import Arparma
 from arclet.alconna.typing import DataCollection
+from nonebot import logger
 from ssttkkl_nonebot_utils.errors.error_handler import ErrorHandlers
 
-from . import permission_handler, limit_handler, help_handler, service_handler, subject_handler
-from .. import config
+from . import (
+    permission_handler,
+    limit_handler,
+    help_handler,
+    service_handler,
+    subject_handler,
+)
 from ..alc import alc_ac
 from ..config import conf
 from ..errors import AccessControlBadRequestError, PermissionDeniedError
@@ -20,8 +27,17 @@ def _handle_permission_denied(e: PermissionDeniedError):
     return conf().access_control_reply_on_permission_denied
 
 
+@asynccontextmanager
+async def _handing_error(fout: TextIO):
+    try:
+        async with error_handlers.run_excepting(fout.write, reraise_unhandled=True):
+            yield
+    except BaseException as e:
+        logger.exception(e)
+
+
 async def handle_ac(fout: TextIO, cmd: str):
-    async with error_handlers.run_excepting(fout.write, reraise_unhandled=False):
+    async with _handing_error(fout):
         result = alc_ac.parse(cmd)
 
         if result.matched:
@@ -58,14 +74,14 @@ async def _handle_permission(fout: TextIO, result: Arparma[DataCollection]):
             fout,
             result.all_matched_args.get("service"),
             result.all_matched_args.get("subject"),
-            True
+            True,
         )
     elif deny:
         await permission_handler.set_(
             fout,
             result.all_matched_args.get("service"),
             result.all_matched_args.get("subject"),
-            False
+            False,
         )
     elif rm:
         await permission_handler.rm(

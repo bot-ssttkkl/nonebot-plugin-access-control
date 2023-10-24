@@ -1,6 +1,6 @@
 from typing import Union
 
-from typing_extensions import TYPE_CHECKING
+from typing import TYPE_CHECKING
 
 from .subservice_owner import SubServiceOwner
 

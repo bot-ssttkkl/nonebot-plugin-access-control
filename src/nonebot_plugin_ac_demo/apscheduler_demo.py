@@ -19,19 +19,18 @@ async def _(bot: Bot, matcher: Matcher, event: Event):
     args = event.get_message().extract_plain_text().split()[1:]
     if len(args) == 0:
         await matcher.finish("Usage: /tick {on, off}")
-    elif args[0] == 'on':
+    elif args[0] == "on":
         try:
-            scheduler.add_job(job_handler,
-                              IntervalTrigger(seconds=10),
-                              kwargs={
-                                  "bot_id": bot.self_id,
-                                  "event": event
-                              },
-                              id=event.get_session_id())
+            scheduler.add_job(
+                job_handler,
+                IntervalTrigger(seconds=10),
+                kwargs={"bot_id": bot.self_id, "event": event},
+                id=event.get_session_id(),
+            )
             await matcher.finish("ok")
         except ConflictingIdError:
             await matcher.finish("ticker has already started")
-    elif args[0] == 'off':
+    elif args[0] == "off":
         try:
             scheduler.remove_job(event.get_session_id())
             await matcher.finish("ok")

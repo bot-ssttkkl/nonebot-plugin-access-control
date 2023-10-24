@@ -1,10 +1,13 @@
-from asyncio import gather
-from collections import defaultdict
 from enum import Enum
-from inspect import isawaitable, signature
-from typing import Dict, List, Callable, Awaitable, Any, Tuple, Optional, TypeVar
+from asyncio import gather
+from inspect import isawaitable
+from collections import defaultdict
+from collections.abc import Awaitable
+from typing import Any, TypeVar, Callable, Optional
 
 from nonebot import logger
+
+from nonebot_plugin_access_control.utils.call_with_params import call_with_params
 
 
 class EventType(str, Enum):
@@ -34,38 +37,33 @@ class EventType(str, Enum):
 
 
 T = TypeVar("T")
-T_Kwargs = Dict[str, Any]
+T_Kwargs = dict[str, Any]
 T_Filter = Callable[..., bool]
 T_Listener = Callable[..., Awaitable[None]]
 
-_listeners: Dict[EventType, List[Tuple[T_Filter, T_Listener]]] = defaultdict(list)
-
-
-def _call_with_kwargs(func: Callable[..., T], kwargs: T_Kwargs) -> T:
-    filtered_kwargs = {}
-
-    sig = signature(func)
-    for p in sig.parameters:
-        filtered_kwargs[p] = kwargs[p]
-
-    return func(**filtered_kwargs)
+_listeners: dict[EventType, list[tuple[T_Filter, T_Listener]]] = defaultdict(list)
 
 
 async def fire_event(event_type: EventType, kwargs: T_Kwargs):
-    logger.trace(f"on event {event_type}  (kwargs: {', '.join(map(lambda k: f'{k}={kwargs[k]}', kwargs))})")
+    logger.trace(
+        f"on event {event_type}  "
+        f"(kwargs: {', '.join(f'{k}={kwargs[k]}' for k in kwargs)})"
+    )
 
     coros = []
 
     for filter_func, func in _listeners[event_type]:
-        if _call_with_kwargs(filter_func, kwargs):
-            coro = _call_with_kwargs(func, kwargs)
+        if call_with_params(filter_func, kwargs):
+            coro = call_with_params(func, kwargs)
             if isawaitable(coro):
                 coros.append(coro)
 
     await gather(*coros)
 
 
-def on_event(event_type: EventType, filter_func: T_Filter, func: Optional[T_Listener] = None):
+def on_event(
+    event_type: EventType, filter_func: T_Filter, func: Optional[T_Listener] = None
+):
     def decorator(func):
         _listeners[event_type].append((filter_func, func))
         return func
