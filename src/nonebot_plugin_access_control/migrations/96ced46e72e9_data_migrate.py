@@ -38,11 +38,14 @@ async def data_migrate(conn: AsyncConnection):
             await conn.execute(
                 sa.text(
                     "INSERT INTO accctrl_permission (subject, service, allow) "
-                    "VALUES (:subject, :service, :allow);"),
-                [{"subject": subject, "service": service, "allow": allow}]
+                    "VALUES (:subject, :service, :allow);"
+                ),
+                [{"subject": subject, "service": service, "allow": allow}],
             )
-            logger.debug(f"从表 nonebot_plugin_access_control_permission 迁移数据："
-                         f"subject={subject} service={service} allow={allow}")
+            logger.debug(
+                f"从表 nonebot_plugin_access_control_permission 迁移数据："
+                f"subject={subject} service={service} allow={allow}"
+            )
 
     # nonebot_plugin_access_control_rate_limit_rule
     async with AsyncSession(get_engine()) as ds_sess:
@@ -57,13 +60,24 @@ async def data_migrate(conn: AsyncConnection):
             await conn.execute(
                 sa.text(
                     "INSERT INTO accctrl_rate_limit_rule (id, subject, service, time_span, `limit`, overwrite) "
-                    "VALUES (:id, :subject, :service, :time_span, :limit, :overwrite);"),
-                [{"id": id, "subject": subject, "service": service, "time_span": time_span,
-                  "limit": limit, "overwrite": overwrite}]
+                    "VALUES (:id, :subject, :service, :time_span, :limit, :overwrite);"
+                ),
+                [
+                    {
+                        "id": id,
+                        "subject": subject,
+                        "service": service,
+                        "time_span": time_span,
+                        "limit": limit,
+                        "overwrite": overwrite,
+                    }
+                ],
             )
-            logger.debug(f"从表 nonebot_plugin_access_control_rate_limit_rule 迁移数据："
-                         f"id={id} subject={subject} service={service} "
-                         f"time_span={time_span} limit={limit} overwrite={overwrite}")
+            logger.debug(
+                f"从表 nonebot_plugin_access_control_rate_limit_rule 迁移数据："
+                f"id={id} subject={subject} service={service} "
+                f"time_span={time_span} limit={limit} overwrite={overwrite}"
+            )
 
     # nonebot_plugin_access_control_rate_limit_token
     async with AsyncSession(get_engine()) as ds_sess:
@@ -78,13 +92,23 @@ async def data_migrate(conn: AsyncConnection):
             await conn.execute(
                 sa.text(
                     "INSERT INTO accctrl_rate_limit_rule (id, rule_id, `user`, acquire_time, expire_time) "
-                    "VALUES (:id, :rule_id, :user, :acquire_time, :expire_time);"),
-                [{"id": id, "rule_id": rule_id, "user": user, "acquire_time": acquire_time,
-                  "expire_time": expire_time}]
+                    "VALUES (:id, :rule_id, :user, :acquire_time, :expire_time);"
+                ),
+                [
+                    {
+                        "id": id,
+                        "rule_id": rule_id,
+                        "user": user,
+                        "acquire_time": acquire_time,
+                        "expire_time": expire_time,
+                    }
+                ],
             )
-            logger.debug(f"从表 nonebot_plugin_access_control_rate_limit_token 迁移数据："
-                         f"id={id} rule_id={rule_id} user={user} "
-                         f"acquire_time={acquire_time} expire_time={expire_time}")
+            logger.debug(
+                f"从表 nonebot_plugin_access_control_rate_limit_token 迁移数据："
+                f"id={id} rule_id={rule_id} user={user} "
+                f"acquire_time={acquire_time} expire_time={expire_time}"
+            )
 
 
 def upgrade(name: str = "") -> None:

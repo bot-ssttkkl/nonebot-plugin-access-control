@@ -25,7 +25,7 @@ class SubjectManager:
                 self.subjects = [
                     *self.subjects[: idx + 1],
                     *subject,
-                    *self.subjects[idx + 1:],
+                    *self.subjects[idx + 1 :],
                 ]
             else:
                 self.subjects = [*self.subjects, *subject]
