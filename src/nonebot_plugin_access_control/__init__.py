@@ -31,3 +31,4 @@ __plugin_meta__ = PluginMetadata(
 
 from . import patcher  # noqa
 from . import matcher  # noqa
+from . import datastore  # noqa
