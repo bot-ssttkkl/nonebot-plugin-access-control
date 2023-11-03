@@ -5,8 +5,15 @@
 from pathlib import Path
 
 from nonebot import require
+from pkg_resources import get_distribution, DistributionNotFound
 
-try:
+
+def _prepare():
+    try:
+        get_distribution("nonebot_plugin_datastore")
+    except DistributionNotFound:
+        return
+
     require("nonebot_plugin_datastore")
 
     from nonebot_plugin_datastore import get_plugin_data
@@ -18,6 +25,6 @@ try:
 
     # 保证将插件加入datastore的待迁移列表
     plugin_data.Model  # noqa
-except:  # noqa: E722
-    # keep silent
-    pass
+
+
+_prepare()

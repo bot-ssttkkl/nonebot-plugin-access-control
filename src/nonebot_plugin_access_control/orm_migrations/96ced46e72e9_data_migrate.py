@@ -12,6 +12,7 @@ from collections.abc import Sequence
 import sqlalchemy as sa
 from alembic.op import run_async
 from nonebot import require, logger
+from pkg_resources import get_distribution, DistributionNotFound
 from sqlalchemy import inspect
 from sqlalchemy.ext.asyncio import AsyncSession, AsyncConnection
 
@@ -22,6 +23,8 @@ depends_on: str | Sequence[str] | None = None
 
 
 async def data_migrate(conn: AsyncConnection):
+    require("nonebot_plugin_datastore")
+
     from nonebot_plugin_datastore.db import get_engine
 
     # nonebot_plugin_access_control_permission
@@ -128,10 +131,9 @@ async def data_migrate(conn: AsyncConnection):
 def upgrade(name: str = "") -> None:
     if name:
         return
-
     try:
-        require("nonebot_plugin_datastore")
-    except RuntimeError:
+        get_distribution("nonebot_plugin_datastore")
+    except DistributionNotFound:
         return
 
     logger.info("正在从 datastore 迁移数据……")
