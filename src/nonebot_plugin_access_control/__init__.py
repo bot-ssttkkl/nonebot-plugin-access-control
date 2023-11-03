@@ -16,7 +16,7 @@ from nonebot.plugin import PluginMetadata, inherit_supported_adapters
 
 from .alc import help_ac
 from .config import Config
-from . import migrations
+from . import orm_migrations
 
 __plugin_meta__ = PluginMetadata(
     name="权限控制",
@@ -26,7 +26,7 @@ __plugin_meta__ = PluginMetadata(
     homepage="https://github.com/bot-ssttkkl/nonebot-access-control",
     config=Config,
     supported_adapters=inherit_supported_adapters("nonebot_plugin_session"),
-    extra={"orm_version_location": migrations},
+    extra={"orm_version_location": orm_migrations},
 )
 
 from . import patcher  # noqa
