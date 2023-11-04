@@ -1,16 +1,13 @@
 from abc import ABC, abstractmethod
-from datetime import datetime
-from datetime import timedelta
-from typing import Optional
-from collections.abc import AsyncGenerator
-from typing import NamedTuple
-from collections.abc import Sequence
+from typing import Optional, NamedTuple
+from datetime import datetime, timedelta
+from collections.abc import Sequence, AsyncGenerator
 
 from nonebot import Bot
 from nonebot.internal.adapter import Event
 
-from ..rate_limit import RateLimitRule
 from ...event_bus import T_Listener
+from ..rate_limit import RateLimitRule
 
 
 class IRateLimitToken:

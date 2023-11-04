@@ -1,8 +1,7 @@
 from io import StringIO
-from typing import Protocol, Optional, TypeVar, Callable
-from collections.abc import Collection
-
 from typing_extensions import Self
+from collections.abc import Collection
+from typing import TypeVar, Callable, Optional, Protocol
 
 
 class TreeNode(Protocol):

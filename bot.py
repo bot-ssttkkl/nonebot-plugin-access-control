@@ -1,7 +1,6 @@
 import nonebot
-
-from nonebot.adapters.onebot.v11 import Adapter as OneBotV11Adapter
 from nonebot.adapters.qqguild import Adapter as QQGuildAdapter
+from nonebot.adapters.onebot.v11 import Adapter as OneBotV11Adapter
 
 nonebot.init()
 

@@ -1,5 +1,5 @@
-from collections.abc import Sequence
 from copy import copy
+from collections.abc import Sequence
 
 from .model import SubjectModel
 

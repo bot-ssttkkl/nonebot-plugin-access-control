@@ -5,8 +5,8 @@ require("nonebot_plugin_apscheduler")
 from datetime import datetime
 from typing import Optional, NamedTuple
 
-from apscheduler.triggers.interval import IntervalTrigger
 from nonebot_plugin_apscheduler import scheduler
+from apscheduler.triggers.interval import IntervalTrigger
 
 from .interface import TokenStorage
 from ....rate_limit import RateLimitRule, RateLimitSingleToken

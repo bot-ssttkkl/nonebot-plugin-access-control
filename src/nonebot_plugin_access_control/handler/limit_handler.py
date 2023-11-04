@@ -1,11 +1,11 @@
-from typing import Optional, TextIO
+from typing import TextIO, Optional
 
 import pytimeparser
 
-from .utils.permission import require_superuser_or_script
-from ..errors import AccessControlBadRequestError, AccessControlQueryError
-from ..service import Service, get_service_by_qualified_name
 from ..service.rate_limit import RateLimitRule
+from .utils.permission import require_superuser_or_script
+from ..service import Service, get_service_by_qualified_name
+from ..errors import AccessControlQueryError, AccessControlBadRequestError
 
 
 def _map_rule(f: TextIO, rule: RateLimitRule, service_name: Optional[str]):

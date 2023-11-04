@@ -1,6 +1,4 @@
-from typing import Union
-
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Union
 
 from .subservice_owner import SubServiceOwner
 

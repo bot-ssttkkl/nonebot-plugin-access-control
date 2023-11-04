@@ -10,10 +10,10 @@ from __future__ import annotations
 from collections.abc import Sequence
 
 import sqlalchemy as sa
-from alembic.op import run_async
-from nonebot import require, logger
-from pkg_resources import get_distribution, DistributionNotFound
 from sqlalchemy import inspect
+from alembic.op import run_async
+from nonebot import logger, require
+from pkg_resources import DistributionNotFound, get_distribution
 from sqlalchemy.ext.asyncio import AsyncSession, AsyncConnection
 
 revision: str = "96ced46e72e9"
@@ -31,20 +31,26 @@ async def data_migrate(conn: AsyncConnection):
     async with AsyncConnection(get_engine()) as ds_conn:
         async with AsyncSession(ds_conn) as ds_sess:
             if not await ds_conn.run_sync(
-                    lambda conn: inspect(conn).has_table("nonebot_plugin_access_control_alembic_version")):
+                lambda conn: inspect(conn).has_table(
+                    "nonebot_plugin_access_control_alembic_version"
+                )
+            ):
                 return
 
-            result = (await ds_sess.execute(
-                sa.text(
-                    "SELECT version_num "
-                    "FROM nonebot_plugin_access_control_alembic_version"
+            result = (
+                await ds_sess.execute(
+                    sa.text(
+                        "SELECT version_num "
+                        "FROM nonebot_plugin_access_control_alembic_version"
+                    )
                 )
-            )).scalar_one_or_none()
+            ).scalar_one_or_none()
             if result != "6fbda6d1d8ee":
                 raise RuntimeError(
                     "请先执行 nb datastore upgrade "
                     "--name nonebot_plugin_access_control "
-                    "将旧数据库迁移到最新版本")
+                    "将旧数据库迁移到最新版本"
+                )
 
             result = await ds_sess.stream(
                 sa.text(

@@ -1,8 +1,9 @@
-from abc import ABC, abstractmethod
 from typing import Optional
+from abc import ABC, abstractmethod
 from collections.abc import AsyncGenerator
 
 from nonebot_plugin_access_control.event_bus import T_Listener
+
 from ..permission import Permission
 
 

@@ -1,8 +1,8 @@
-from apscheduler.jobstores.base import JobLookupError, ConflictingIdError
-from apscheduler.triggers.interval import IntervalTrigger
-from nonebot import on_command, require, get_bot, Bot, logger
 from nonebot.internal.adapter import Event
 from nonebot.internal.matcher import Matcher
+from apscheduler.triggers.interval import IntervalTrigger
+from nonebot import Bot, logger, get_bot, require, on_command
+from apscheduler.jobstores.base import JobLookupError, ConflictingIdError
 
 from nonebot_plugin_ac_demo.plugin_service import plugin_service
 

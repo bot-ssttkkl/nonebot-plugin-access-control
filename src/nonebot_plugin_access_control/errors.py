@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING
 
-from ssttkkl_nonebot_utils.errors.errors import BadRequestError, QueryError
+from ssttkkl_nonebot_utils.errors.errors import QueryError, BadRequestError
 
 if TYPE_CHECKING:
     from .service.interface.rate_limit import AcquireTokenResult

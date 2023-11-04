@@ -6,6 +6,7 @@ from collections.abc import Collection
 from nonebot import logger
 
 from nonebot_plugin_access_control.errors import AccessControlError
+
 from .base import Service
 from .interface.subservice_owner import ISubServiceOwner
 

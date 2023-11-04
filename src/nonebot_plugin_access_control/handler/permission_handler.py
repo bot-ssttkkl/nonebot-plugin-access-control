@@ -1,9 +1,9 @@
-from typing import Optional, TextIO
+from typing import TextIO, Optional
 
-from .utils.permission import require_superuser_or_script
-from ..errors import AccessControlBadRequestError, AccessControlQueryError
-from ..service import Service, get_service_by_qualified_name
 from ..service.permission import Permission
+from .utils.permission import require_superuser_or_script
+from ..service import Service, get_service_by_qualified_name
+from ..errors import AccessControlQueryError, AccessControlBadRequestError
 
 
 def _map_permission(p: Permission, query_service_name: Optional[str] = None) -> str:

@@ -1,8 +1,8 @@
 from typing import TextIO, Optional
 
-from .utils.permission import require_superuser_or_script
-from ..service import get_service_by_qualified_name
 from ..utils.tree import get_tree_summary
+from ..service import get_service_by_qualified_name
+from .utils.permission import require_superuser_or_script
 
 
 @require_superuser_or_script

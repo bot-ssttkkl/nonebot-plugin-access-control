@@ -1,7 +1,7 @@
 from nonebot import logger
 
-from .interface import TokenStorage
 from .....config import conf
+from .interface import TokenStorage
 
 if conf().access_control_rate_limit_token_storage == "datastore":
     from .datastore import get_datastore_token_storage

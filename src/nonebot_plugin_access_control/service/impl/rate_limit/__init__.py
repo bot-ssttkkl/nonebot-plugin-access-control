@@ -1,27 +1,25 @@
 from datetime import timedelta
-from typing import TypeVar, Generic
-from collections.abc import AsyncGenerator, Collection
-from typing import Optional
+from typing import Generic, TypeVar, Optional
+from collections.abc import Collection, AsyncGenerator
 
-from nonebot import logger, Bot
+from nonebot import Bot, logger
 from nonebot.internal.adapter import Event
-from sqlalchemy import delete, select
-from sqlalchemy import func
+from sqlalchemy import func, delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from .token import get_token_storage
 from ...interface import IService
-from ...interface.rate_limit import (
-    IServiceRateLimit,
-    IRateLimitToken,
-    AcquireTokenResult,
-)
-from ...rate_limit import RateLimitRule, RateLimitSingleToken
-from ....errors import AccessControlQueryError
-from ....event_bus import T_Listener, EventType, on_event, fire_event
-from ....models import RateLimitTokenOrm, RateLimitRuleOrm
+from .token import get_token_storage
 from ....subject import extract_subjects
 from ....utils.session import use_ac_session
+from ....errors import AccessControlQueryError
+from ....models import RateLimitRuleOrm, RateLimitTokenOrm
+from ...rate_limit import RateLimitRule, RateLimitSingleToken
+from ....event_bus import EventType, T_Listener, on_event, fire_event
+from ...interface.rate_limit import (
+    IRateLimitToken,
+    IServiceRateLimit,
+    AcquireTokenResult,
+)
 
 T_Service = TypeVar("T_Service", bound=IService)
 

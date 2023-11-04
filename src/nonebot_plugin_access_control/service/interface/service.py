@@ -2,8 +2,8 @@ from abc import ABC
 from typing import Generic, TypeVar, Optional
 
 from .base import IServiceBase
-from .permission import IServicePermission
 from .rate_limit import IServiceRateLimit
+from .permission import IServicePermission
 
 T_Service = TypeVar("T_Service", bound="IService", covariant=True)
 T_ParentService = TypeVar(

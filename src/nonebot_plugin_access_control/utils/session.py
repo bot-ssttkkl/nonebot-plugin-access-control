@@ -1,5 +1,5 @@
 import contextvars
-from contextlib import asynccontextmanager, AbstractAsyncContextManager
+from contextlib import AbstractAsyncContextManager, asynccontextmanager
 
 from nonebot_plugin_orm import get_session
 from sqlalchemy.ext.asyncio import AsyncSession

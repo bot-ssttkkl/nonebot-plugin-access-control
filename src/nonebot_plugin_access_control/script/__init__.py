@@ -1,15 +1,14 @@
+from sys import stdin, stdout
 from importlib.metadata import version
-from sys import stdout, stdin
 
 import anyio
 from nb_cli import run_sync
 from nb_cli.cli import run_async
 from nonebot_plugin_orm import init_orm
 
-from .. import __plugin_meta__ as plugin_meta
 from ..handler import handle_ac
+from .. import __plugin_meta__ as plugin_meta
 from ..handler.utils.env import ac_set_script_env
-
 
 welcome_text = f"""
 nonebot-plugin-access-control v{version("nonebot_plugin_access_control")}
