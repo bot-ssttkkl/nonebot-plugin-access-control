@@ -4,11 +4,17 @@ from collections.abc import Collection
 import nonebot
 from nonebot import logger
 
+from nonebot_plugin_access_control_api.context import context
+from nonebot_plugin_access_control_api.service.interface.nonebot_service import (
+    INoneBotService,
+)
+from nonebot_plugin_access_control_api.errors import (
+    AccessControlError,
+    AccessControlQueryError,
+)
+
 from .base import Service
-from ..context import context
 from .plugin import PluginService
-from .interface.nonebot_service import INoneBotService
-from ..errors import AccessControlError, AccessControlQueryError
 
 
 @context.bind_singleton_to(INoneBotService)

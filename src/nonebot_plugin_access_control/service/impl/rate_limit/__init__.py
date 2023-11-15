@@ -6,18 +6,22 @@ from nonebot import Bot, logger
 from nonebot.internal.adapter import Event
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from ....context import context
-from ...interface import IService
-from ....subject import extract_subjects
+from nonebot_plugin_access_control_api.context import context
+from nonebot_plugin_access_control_api.subject import extract_subjects
+from nonebot_plugin_access_control_api.service.interface import IService
+from nonebot_plugin_access_control_api.service.interface.rate_limit import (
+    IServiceRateLimit,
+)
+from nonebot_plugin_access_control_api.models.rate_limit import (
+    RateLimitRule,
+    IRateLimitToken,
+    AcquireTokenResult,
+    RateLimitSingleToken,
+)
+
 from ....repository.rate_limit import IRateLimitRepository
-from ...rate_limit import RateLimitRule, RateLimitSingleToken
 from ....event_bus import EventType, T_Listener, on_event, fire_event
 from ....repository.rate_limit_token import IRateLimitTokenRepository
-from ...interface.rate_limit import (
-    IRateLimitToken,
-    IServiceRateLimit,
-    AcquireTokenResult,
-)
 
 T_Service = TypeVar("T_Service", bound=IService)
 

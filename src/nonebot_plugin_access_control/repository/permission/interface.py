@@ -1,8 +1,8 @@
 from typing import Optional, Protocol
 from collections.abc import AsyncGenerator
 
-from ...service.interface import IService
-from ...models.permission import Permission
+from nonebot_plugin_access_control_api.service.interface import IService
+from nonebot_plugin_access_control_api.models.permission import Permission
 
 
 class IPermissionRepository(Protocol):

@@ -5,10 +5,12 @@ from collections.abc import Collection
 
 from nonebot import logger
 
-from nonebot_plugin_access_control.errors import AccessControlError
+from nonebot_plugin_access_control_api.errors import AccessControlError
+from nonebot_plugin_access_control_api.service.interface.subservice_owner import (
+    ISubServiceOwner,
+)
 
 from .base import Service
-from .interface.subservice_owner import ISubServiceOwner
 
 
 def _validate_name(name: str) -> bool:

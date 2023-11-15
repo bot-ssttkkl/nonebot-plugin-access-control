@@ -7,7 +7,7 @@ from typing import Any, TypeVar, Callable, Optional
 
 from nonebot import logger
 
-from nonebot_plugin_access_control.utils.call_with_params import call_with_params
+from nonebot_plugin_access_control_api.utils.call_with_params import call_with_params
 
 
 class EventType(str, Enum):

@@ -1,6 +1,6 @@
 from typing import Optional, Protocol
 
-from nonebot_plugin_access_control.models.rate_limit import (
+from nonebot_plugin_access_control_api.models.rate_limit import (
     RateLimitRule,
     RateLimitSingleToken,
 )

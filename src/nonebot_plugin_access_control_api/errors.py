@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING
 from ssttkkl_nonebot_utils.errors.errors import QueryError, BadRequestError
 
 if TYPE_CHECKING:
-    from .service.interface.rate_limit import AcquireTokenResult
+    from .models.rate_limit import AcquireTokenResult
 
 
 class AccessControlError(RuntimeError):

@@ -3,8 +3,9 @@ from functools import wraps
 from nonebot.permission import SUPERUSER
 from nonebot.internal.matcher import current_bot, current_event
 
-from nonebot_plugin_access_control.errors import PermissionDeniedError
-from nonebot_plugin_access_control.handler.utils.env import ac_get_env
+from nonebot_plugin_access_control_api.errors import PermissionDeniedError
+
+from .env import ac_get_env
 
 
 def require_superuser_or_script(f):

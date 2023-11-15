@@ -2,10 +2,14 @@ from typing import TextIO, Optional
 
 import pytimeparser
 
+from nonebot_plugin_access_control_api.errors import (
+    AccessControlQueryError,
+    AccessControlBadRequestError,
+)
+
 from ..service.rate_limit import RateLimitRule
 from .utils.permission import require_superuser_or_script
 from ..service import Service, get_service_by_qualified_name
-from ..errors import AccessControlQueryError, AccessControlBadRequestError
 
 
 def _map_rule(f: TextIO, rule: RateLimitRule, service_name: Optional[str]):

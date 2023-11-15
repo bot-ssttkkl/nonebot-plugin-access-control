@@ -2,9 +2,10 @@ from datetime import timedelta
 from typing import Optional, Protocol
 from collections.abc import AsyncGenerator
 
-from ...service.interface import IService
+from nonebot_plugin_access_control_api.service.interface import IService
+from nonebot_plugin_access_control_api.models.rate_limit import RateLimitRule
+
 from ..orm.rate_limit import RateLimitRuleOrm
-from ...models.rate_limit import RateLimitRule
 
 
 class IRateLimitRepository(Protocol):

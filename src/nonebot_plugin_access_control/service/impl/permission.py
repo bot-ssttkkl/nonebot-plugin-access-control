@@ -3,19 +3,22 @@ from typing import Generic, TypeVar, Optional
 
 from nonebot import logger
 
+from nonebot_plugin_access_control_api.context import context
+from nonebot_plugin_access_control_api.models.permission import Permission
+from nonebot_plugin_access_control_api.service.interface.service import IService
+from nonebot_plugin_access_control_api.service.interface.permission import (
+    IServicePermission,
+)
+
 from ...config import conf
-from ...context import context
-from ..permission import Permission
-from ..interface.service import IService
-from ..interface.permission import IServicePermission
-from ...repository.permission import PermissionRepository
+from ...repository.permission import IPermissionRepository
 from ...event_bus import EventType, T_Listener, on_event, fire_event
 
 T_Service = TypeVar("T_Service", bound=IService)
 
 
 class ServicePermissionImpl(Generic[T_Service], IServicePermission):
-    repo = context.require(PermissionRepository)
+    repo = context.require(IPermissionRepository)
 
     def __init__(self, service: T_Service):
         self.service = service

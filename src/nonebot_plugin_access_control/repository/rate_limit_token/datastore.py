@@ -1,6 +1,6 @@
 from nonebot import require
 
-from ...context import context
+from nonebot_plugin_access_control_api.context import context
 
 require("nonebot_plugin_apscheduler")
 
@@ -12,10 +12,14 @@ from sqlalchemy import func, delete, select
 from nonebot_plugin_apscheduler import scheduler
 from apscheduler.triggers.interval import IntervalTrigger
 
+from nonebot_plugin_access_control_api.models.rate_limit import (
+    RateLimitRule,
+    RateLimitSingleToken,
+)
+
 from ..utils import use_ac_session
 from .interface import IRateLimitTokenRepository
 from ..orm.rate_limit import RateLimitRuleOrm, RateLimitTokenOrm
-from ...models.rate_limit import RateLimitRule, RateLimitSingleToken
 
 
 @context.bind_singleton_to(IRateLimitTokenRepository)

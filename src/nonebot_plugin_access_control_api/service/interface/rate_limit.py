@@ -1,25 +1,14 @@
+from datetime import timedelta
 from abc import ABC, abstractmethod
-from typing import Optional, NamedTuple
-from datetime import datetime, timedelta
-from collections.abc import Sequence, AsyncGenerator
+from typing import Any, Callable, Optional
+from collections.abc import Awaitable, AsyncGenerator
 
 from nonebot import Bot
 from nonebot.internal.adapter import Event
 
-from ...event_bus import T_Listener
-from ..rate_limit import RateLimitRule
+from ...models.rate_limit import RateLimitRule, IRateLimitToken, AcquireTokenResult
 
-
-class IRateLimitToken:
-    async def retire(self):
-        ...
-
-
-class AcquireTokenResult(NamedTuple):
-    success: bool
-    token: Optional[IRateLimitToken] = None
-    violating: Optional[Sequence[RateLimitRule]] = None
-    available_time: Optional[datetime] = None
+T_Listener = Callable[..., Awaitable[Any]]
 
 
 class IServiceRateLimit(ABC):

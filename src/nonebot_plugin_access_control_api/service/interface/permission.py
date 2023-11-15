@@ -1,10 +1,10 @@
-from typing import Optional
 from abc import ABC, abstractmethod
-from collections.abc import AsyncGenerator
+from typing import Any, Callable, Optional
+from collections.abc import Awaitable, AsyncGenerator
 
-from nonebot_plugin_access_control.event_bus import T_Listener
+from ...models.permission import Permission
 
-from ..permission import Permission
+T_Listener = Callable[..., Awaitable[Any]]
 
 
 class IServicePermission(ABC):

@@ -1,14 +1,10 @@
-from typing import Union, Callable
-from collections.abc import Sequence
-
 from nonebot import Bot, logger
 from nonebot.internal.adapter import Event
 
 from ..model import SubjectModel
 from ..manager import SubjectManager
+from .base import T_SubjectExtractor
 from ...utils.call_with_params import call_with_params
-
-T_SubjectExtractor = Callable[[...], Union[Sequence[SubjectModel], None]]
 
 
 class SubjectExtractorChain:

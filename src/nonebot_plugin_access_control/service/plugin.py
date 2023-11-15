@@ -1,9 +1,12 @@
 from typing import TYPE_CHECKING
 
+from nonebot_plugin_access_control_api.service.interface.plugin_service import (
+    IPluginService,
+)
+
 from . import Service
 from .subservice import SubService
 from .subservice_owner import SubServiceOwner
-from .interface.plugin_service import IPluginService
 
 if TYPE_CHECKING:
     from .nonebot import NoneBotService

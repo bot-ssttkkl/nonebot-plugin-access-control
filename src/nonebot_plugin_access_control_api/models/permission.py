@@ -1,10 +1,10 @@
 from typing import TYPE_CHECKING, NamedTuple
 
 if TYPE_CHECKING:
-    from ..service import Service
+    from ..service.interface import IService
 
 
 class Permission(NamedTuple):
-    service: "Service"
+    service: "IService"
     subject: str
     allow: bool
