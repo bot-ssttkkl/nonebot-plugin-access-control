@@ -1,26 +1,23 @@
 from collections.abc import AsyncGenerator
-from typing import Generic, TypeVar, Optional
+from typing import Optional
 
 from nonebot import logger
-
 from nonebot_plugin_access_control_api.context import context
+from nonebot_plugin_access_control_api.event_bus import EventType, T_Listener, on_event, fire_event
 from nonebot_plugin_access_control_api.models.permission import Permission
-from nonebot_plugin_access_control_api.service.interface.service import IService
 from nonebot_plugin_access_control_api.service.interface.permission import (
     IServicePermission,
 )
+from nonebot_plugin_access_control_api.service.interface.service import IService
 
 from ...config import conf
 from ...repository.permission import IPermissionRepository
-from ...event_bus import EventType, T_Listener, on_event, fire_event
-
-T_Service = TypeVar("T_Service", bound=IService)
 
 
-class ServicePermissionImpl(Generic[T_Service], IServicePermission):
+class ServicePermissionImpl(IServicePermission):
     repo = context.require(IPermissionRepository)
 
-    def __init__(self, service: T_Service):
+    def __init__(self, service: IService):
         self.service = service
 
     def on_set_permission(self, func: Optional[T_Listener] = None):
@@ -45,7 +42,7 @@ class ServicePermissionImpl(Generic[T_Service], IServicePermission):
         )
 
     async def get_permission_by_subject(
-        self, *subject: str, trace: bool = True
+            self, *subject: str, trace: bool = True
     ) -> Optional[Permission]:
         for sub in subject:
             if trace:
@@ -59,7 +56,7 @@ class ServicePermissionImpl(Generic[T_Service], IServicePermission):
         return None
 
     async def get_permissions(
-        self, *, trace: bool = True
+            self, *, trace: bool = True
     ) -> AsyncGenerator[Permission, None]:
         if trace:
             for node in self.service.trace():
@@ -71,7 +68,7 @@ class ServicePermissionImpl(Generic[T_Service], IServicePermission):
 
     @classmethod
     async def get_all_permissions_by_subject(
-        cls, *subject: str
+            cls, *subject: str
     ) -> AsyncGenerator[Permission, None]:
         overridden_services = set()
         for sub in subject:
@@ -136,7 +133,7 @@ class ServicePermissionImpl(Generic[T_Service], IServicePermission):
         return ok
 
     async def remove_permission(self, subject: str) -> bool:
-        ok = self.repo.remove_permission(self.service, subject)
+        ok = await self.repo.remove_permission(self.service, subject)
         if ok:
             await self._fire_service_remove_permission(subject)
 
