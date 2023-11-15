@@ -38,7 +38,7 @@ T_ParentService = TypeVar("T_ParentService", bound=Optional["Service"], covarian
 T_ChildService = TypeVar("T_ChildService", bound="Service", covariant=True)
 
 
-class Service(IService[T_ParentService, T_ChildService], ABC):
+class Service(IService["Service", T_ParentService, T_ChildService], ABC):
     _matcher_service_mapping: dict[type[Matcher], "Service"] = {}
 
     def __init__(self):

@@ -1,8 +1,8 @@
 from nonebot import logger
 
 from nonebot_plugin_access_control.service import Service
-from nonebot_plugin_access_control.service.permission import Permission
-from nonebot_plugin_access_control.service.rate_limit import RateLimitRule
+from nonebot_plugin_access_control_api.models.permission import Permission
+from nonebot_plugin_access_control_api.models.rate_limit import RateLimitRule
 
 from .plugin_service import plugin_service
 from .matcher_demo import a_service, b_service, c_service

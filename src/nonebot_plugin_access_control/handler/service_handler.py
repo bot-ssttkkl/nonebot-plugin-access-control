@@ -1,7 +1,10 @@
 from typing import TextIO, Optional
 
+from nonebot_plugin_access_control_api.service.methods import (
+    get_service_by_qualified_name,
+)
+
 from ..utils.tree import get_tree_summary
-from ..service import get_service_by_qualified_name
 from .utils.permission import require_superuser_or_script
 
 

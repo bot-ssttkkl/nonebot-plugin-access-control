@@ -1,13 +1,16 @@
 from typing import TextIO, Optional
 
+from nonebot_plugin_access_control_api.models.permission import Permission
+from nonebot_plugin_access_control_api.service.methods import (
+    get_service_by_qualified_name,
+)
 from nonebot_plugin_access_control_api.errors import (
     AccessControlQueryError,
     AccessControlBadRequestError,
 )
 
-from ..service.permission import Permission
+from ..service import Service
 from .utils.permission import require_superuser_or_script
-from ..service import Service, get_service_by_qualified_name
 
 
 def _map_permission(p: Permission, query_service_name: Optional[str] = None) -> str:
