@@ -4,17 +4,15 @@ from collections.abc import Collection, AsyncGenerator
 
 from nonebot import Bot, logger
 from nonebot.internal.adapter import Event
-from sqlalchemy import func, delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from ....context import context
 from ...interface import IService
-from .token import get_token_storage
 from ....subject import extract_subjects
-from ....utils.session import use_ac_session
-from ....errors import AccessControlQueryError
-from ....models import RateLimitRuleOrm, RateLimitTokenOrm
+from ....repository.rate_limit import IRateLimitRepository
 from ...rate_limit import RateLimitRule, RateLimitSingleToken
 from ....event_bus import EventType, T_Listener, on_event, fire_event
+from ....repository.rate_limit_token import IRateLimitTokenRepository
 from ...interface.rate_limit import (
     IRateLimitToken,
     IServiceRateLimit,
@@ -37,6 +35,9 @@ class RateLimitTokenImpl(IRateLimitToken):
 
 
 class ServiceRateLimitImpl(Generic[T_Service], IServiceRateLimit):
+    repo = context.require(IRateLimitRepository)
+    token_repo = context.require(IRateLimitTokenRepository)
+
     def __init__(self, service: T_Service):
         self.service = service
 
@@ -54,32 +55,12 @@ class ServiceRateLimitImpl(Generic[T_Service], IServiceRateLimit):
             func,
         )
 
-    @staticmethod
+    @classmethod
     async def _get_rules_by_subject(
-        service: Optional[T_Service], subject: Optional[str]
+        cls, service: Optional[T_Service], subject: Optional[str]
     ) -> AsyncGenerator[RateLimitRule, None]:
-        async with use_ac_session() as session:
-            stmt = select(RateLimitRuleOrm)
-            if service is not None:
-                stmt = stmt.where(RateLimitRuleOrm.service == service.qualified_name)
-            if subject is not None:
-                stmt = stmt.where(RateLimitRuleOrm.subject == subject)
-
-            async for x in await session.stream_scalars(stmt):
-                s = service
-                if s is None:
-                    from ...methods import get_service_by_qualified_name
-
-                    s = get_service_by_qualified_name(x.service)
-                if s is not None:
-                    yield RateLimitRule(
-                        x.id,
-                        s,
-                        x.subject,
-                        timedelta(seconds=x.time_span),
-                        x.limit,
-                        x.overwrite,
-                    )
+        async for x in cls.repo.get_rules_by_subject(service, subject):
+            yield x
 
     async def get_rate_limit_rules_by_subject(
         self, *subject: str, trace: bool = True
@@ -139,73 +120,32 @@ class ServiceRateLimitImpl(Generic[T_Service], IServiceRateLimit):
     async def add_rate_limit_rule(
         self, subject: str, time_span: timedelta, limit: int, overwrite: bool = False
     ) -> RateLimitRule:
-        async with use_ac_session() as sess:
-            if overwrite:
-                stmt = select(func.count()).where(
-                    RateLimitRuleOrm.subject == subject,
-                    RateLimitRuleOrm.service == self.service.qualified_name,
-                )
-                cnt = (await sess.execute(stmt)).scalar_one()
-
-                if cnt > 0:
-                    raise AccessControlQueryError("已存在对该实体与服务的限流规则，不允许再添加覆写规则")
-
-            orm = RateLimitRuleOrm(
-                subject=subject,
-                service=self.service.qualified_name,
-                time_span=int(time_span.total_seconds()),
-                limit=limit,
-                overwrite=overwrite,
-            )
-            sess.add(orm)
-            await sess.commit()
-
-            await sess.refresh(orm)
-
-            rule = RateLimitRule(
-                orm.id, self.service, subject, time_span, limit, overwrite
-            )
-            await self._fire_service_add_rate_limit_rule(rule)
-
-            return rule
+        rule = self.repo.add_rate_limit_rule(
+            self.service, subject, time_span, limit, overwrite
+        )
+        await self._fire_service_add_rate_limit_rule(rule)
+        return rule
 
     @classmethod
     async def remove_rate_limit_rule(cls, rule_id: str) -> bool:
-        async with use_ac_session() as sess:
-            orm = await sess.get(RateLimitRuleOrm, rule_id)
-            if orm is None:
-                return False
-
-            await sess.delete(orm)
-            await sess.commit()
-
-            from ...methods import get_service_by_qualified_name
-
-            service = get_service_by_qualified_name(orm.service)
-
-            rule = RateLimitRule(
-                orm.id,
-                service,
-                orm.subject,
-                timedelta(seconds=orm.time_span),
-                orm.limit,
-                orm.overwrite,
-            )
+        rule = cls.repo.remove_rate_limit_rule(rule_id)
+        if rule is not None:
             await cls._fire_service_remove_rate_limit_rule(rule)
-
             return True
+        else:
+            return False
 
-    @staticmethod
+    @classmethod
     async def _get_first_expire_token(
-        rule: RateLimitRule, user: str
+        cls, rule: RateLimitRule, user: str
     ) -> Optional[RateLimitSingleToken]:
-        return await get_token_storage().get_first_expire_token(rule, user)
+        return await cls.token_repo.get_first_expire_token(rule, user)
 
-    @staticmethod
+    @classmethod
     async def _acquire_token(
-        rule: RateLimitRule, user: str
+        cls, rule: RateLimitRule, user: str
     ) -> Optional[RateLimitSingleToken]:
-        x = await get_token_storage().acquire_token(rule, user)
+        x = await cls.token_repo.acquire_token(rule, user)
         if x is not None:
             logger.trace(
                 f"[rate limit] token {x.id} acquired "
@@ -214,9 +154,10 @@ class ServiceRateLimitImpl(Generic[T_Service], IServiceRateLimit):
             )
         return x
 
-    @staticmethod
-    async def _retire_token(token: RateLimitSingleToken):
-        await get_token_storage().retire_token(token)
+    @classmethod
+    async def _retire_token(cls, token: RateLimitSingleToken):
+        repo = cls.token_repo.require(IRateLimitTokenRepository)
+        await repo.retire_token(token)
         logger.trace(
             f"[rate limit] token {token.id} retired for "
             f"rule {token.rule_id} by user {token.user}"
@@ -296,8 +237,4 @@ class ServiceRateLimitImpl(Generic[T_Service], IServiceRateLimit):
 
     @classmethod
     async def clear_rate_limit_tokens(cls):
-        async with use_ac_session() as sess:
-            stmt = delete(RateLimitTokenOrm)
-            result = await sess.execute(stmt)
-            await sess.commit()
-            logger.debug(f"deleted {result.rowcount} rate limit token(s)")
+        cls.token_repo.clear_token()

@@ -1,9 +1,12 @@
 from typing import Optional, Protocol
 
-from ....rate_limit import RateLimitRule, RateLimitSingleToken
+from nonebot_plugin_access_control.models.rate_limit import (
+    RateLimitRule,
+    RateLimitSingleToken,
+)
 
 
-class TokenStorage(Protocol):
+class IRateLimitTokenRepository(Protocol):
     async def get_first_expire_token(
         self, rule: RateLimitRule, user: str
     ) -> Optional[RateLimitSingleToken]:
@@ -15,4 +18,7 @@ class TokenStorage(Protocol):
         ...
 
     async def retire_token(self, token: RateLimitSingleToken):
+        ...
+
+    async def clear_token(self):
         ...

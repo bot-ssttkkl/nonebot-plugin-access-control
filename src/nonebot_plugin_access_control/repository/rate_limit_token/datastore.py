@@ -1,5 +1,7 @@
 from nonebot import require
 
+from ...context import context
+
 require("nonebot_plugin_apscheduler")
 
 from typing import Optional
@@ -10,13 +12,21 @@ from sqlalchemy import func, delete, select
 from nonebot_plugin_apscheduler import scheduler
 from apscheduler.triggers.interval import IntervalTrigger
 
-from .interface import TokenStorage
-from .....utils.session import use_ac_session
-from .....models import RateLimitRuleOrm, RateLimitTokenOrm
-from ....rate_limit import RateLimitRule, RateLimitSingleToken
+from ..utils import use_ac_session
+from .interface import IRateLimitTokenRepository
+from ..orm.rate_limit import RateLimitRuleOrm, RateLimitTokenOrm
+from ...models.rate_limit import RateLimitRule, RateLimitSingleToken
 
 
-class DataStoreTokenStorage(TokenStorage):
+@context.bind_singleton_to(IRateLimitTokenRepository)
+class DataStoreTokenRepository(IRateLimitTokenRepository):
+    def __init__(self):
+        scheduler.add_job(
+            self.delete_outdated_tokens,
+            IntervalTrigger(minutes=1),
+            id="delete_outdated_tokens_inmemory",
+        )
+
     async def get_first_expire_token(
         self, rule: RateLimitRule, user: str
     ) -> Optional[RateLimitSingleToken]:
@@ -111,13 +121,9 @@ class DataStoreTokenStorage(TokenStorage):
 
             logger.debug(f"deleted {rowcount} outdated rate limit token(s)")
 
-
-datastore_storage = DataStoreTokenStorage()
-
-scheduler.scheduled_job(
-    IntervalTrigger(minutes=10), id="delete_outdated_tokens_datastore"
-)(datastore_storage.delete_outdated_tokens)
-
-
-def get_datastore_token_storage() -> TokenStorage:
-    return datastore_storage
+    async def clear_token(self):
+        async with use_ac_session() as sess:
+            stmt = delete(RateLimitTokenOrm)
+            result = await sess.execute(stmt)
+            await sess.commit()
+            logger.debug(f"deleted {result.rowcount} rate limit token(s)")

@@ -1,13 +1,18 @@
 from typing import TYPE_CHECKING
 
+from . import Service
 from .subservice import SubService
 from .subservice_owner import SubServiceOwner
+from .interface.plugin_service import IPluginService
 
 if TYPE_CHECKING:
     from .nonebot import NoneBotService
 
 
-class PluginService(SubServiceOwner["NoneBotService", SubService]):
+class PluginService(
+    SubServiceOwner["NoneBotService", SubService],
+    IPluginService[Service, "NoneBotService", SubService],
+):
     def __init__(self, name: str, auto_created: bool, parent: "NoneBotService"):
         super().__init__()
         self._name = name

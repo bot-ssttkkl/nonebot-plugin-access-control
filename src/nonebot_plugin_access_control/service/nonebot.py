@@ -5,11 +5,16 @@ import nonebot
 from nonebot import logger
 
 from .base import Service
+from ..context import context
 from .plugin import PluginService
+from .interface.nonebot_service import INoneBotService
 from ..errors import AccessControlError, AccessControlQueryError
 
 
-class NoneBotService(Service[None, PluginService]):
+@context.bind_singleton_to(INoneBotService)
+class NoneBotService(
+    Service[None, PluginService], INoneBotService[Service, PluginService]
+):
     def __init__(self):
         super().__init__()
         self._plugin_services: dict[str, PluginService] = {}

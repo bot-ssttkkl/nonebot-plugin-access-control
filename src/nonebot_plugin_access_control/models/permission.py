@@ -1,11 +1,10 @@
-from nonebot_plugin_orm import Model
-from sqlalchemy.orm import Mapped, MappedAsDataclass, mapped_column
+from typing import TYPE_CHECKING, NamedTuple
+
+if TYPE_CHECKING:
+    from ..service import Service
 
 
-class PermissionOrm(MappedAsDataclass, Model):
-    __tablename__ = "accctrl_permission"
-    __table_args__ = {"extend_existing": True}
-
-    subject: Mapped[str] = mapped_column(primary_key=True)
-    service: Mapped[str] = mapped_column(primary_key=True)
-    allow: Mapped[bool]
+class Permission(NamedTuple):
+    service: "Service"
+    subject: str
+    allow: bool

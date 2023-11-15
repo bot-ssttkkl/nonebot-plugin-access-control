@@ -1,7 +1,7 @@
 from abc import ABC
 from typing import Generic, TypeVar, Optional
 
-from .base import IServiceBase
+from .service_base import IServiceBase
 from .rate_limit import IServiceRateLimit
 from .permission import IServicePermission
 

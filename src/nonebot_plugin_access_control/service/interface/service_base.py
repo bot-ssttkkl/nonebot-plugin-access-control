@@ -25,23 +25,23 @@ class IServiceBase(Generic[T_Service, T_ParentService, T_ChildService], ABC):
 
     @property
     @abstractmethod
-    def parent(self) -> Optional[T_ParentService]:
+    def parent(self) -> Optional["IServiceBase"]:
         raise NotImplementedError()
 
     @property
-    def children(self) -> Collection[T_ChildService]:
+    def children(self) -> Collection["IServiceBase"]:
         raise NotImplementedError()
 
     @abstractmethod
-    def travel(self) -> Generator[T_Service, None, None]:
+    def travel(self) -> Generator["IServiceBase", None, None]:
         raise NotImplementedError()
 
     @abstractmethod
-    def trace(self) -> Generator[T_Service, None, None]:
+    def trace(self) -> Generator["IServiceBase", None, None]:
         raise NotImplementedError()
 
     @abstractmethod
-    def get_child(self, name: str) -> Optional[T_Service]:
+    def get_child(self, name: str) -> Optional["IServiceBase"]:
         raise NotImplementedError()
 
     @abstractmethod

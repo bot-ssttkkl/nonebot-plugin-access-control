@@ -1,8 +1,8 @@
 from abc import ABC
 from functools import wraps
+from typing import TypeVar, Optional
 from datetime import datetime, timedelta
 from collections.abc import AsyncGenerator
-from typing import Generic, TypeVar, Optional
 
 from nonebot import Bot, logger
 from nonebot.internal.adapter import Event
@@ -30,11 +30,7 @@ T_ParentService = TypeVar("T_ParentService", bound=Optional["Service"], covarian
 T_ChildService = TypeVar("T_ChildService", bound="Service", covariant=True)
 
 
-class Service(
-    Generic[T_ParentService, T_ChildService],
-    IService["Service", T_ParentService, T_ChildService],
-    ABC,
-):
+class Service(IService[T_ParentService, T_ChildService], ABC):
     _matcher_service_mapping: dict[type[Matcher], "Service"] = {}
 
     def __init__(self):
@@ -273,8 +269,9 @@ async def check(matcher: Matcher, bot: Bot, event: Event):
             if msg is None:
                 now = datetime.utcnow()
                 available_time = e.result.available_time
-                msg = "使用太频繁了，请稍后再试。" "下次可用时间：{:.0f}秒后".format(
-                    available_time.timestamp() - now.timestamp()
+                msg = (
+                    "使用太频繁了，请稍后再试。"
+                    f"下次可用时间：{available_time.timestamp() - now.timestamp():.0f}秒后"
                 )
             await matcher.send(msg)
         raise IgnoredException("rate limited (by nonebot_plugin_access_control)")
