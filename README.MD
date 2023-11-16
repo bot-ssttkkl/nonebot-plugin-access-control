@@ -241,13 +241,9 @@ nonebot.load_builtin_plugins("echo")
 
 ## 配置项
 
-### datastore_database_url
+### 数据库配置
 
-（来自[nonebot-plugin-datastore](https://github.com/he0119/nonebot-plugin-datastore)）
-
-数据库连接字符串，默认使用 SQLite 数据库
-
-默认值：`sqlite+aiosqlite:///data_dir/data.db`
+参考 https://github.com/nonebot/plugin-orm#%E9%85%8D%E7%BD%AE%E9%A1%B9
 
 ### access_control_default_permission
 
