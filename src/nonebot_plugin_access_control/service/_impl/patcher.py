@@ -4,9 +4,17 @@ from functools import wraps
 from nonebot import logger, Bot
 from nonebot.exception import IgnoredException
 from nonebot.internal.adapter import Event
-from nonebot.internal.matcher import Matcher, current_bot, current_event, current_matcher
+from nonebot.internal.matcher import (
+    Matcher,
+    current_bot,
+    current_event,
+    current_matcher,
+)
 from nonebot.message import run_preprocessor
-from nonebot_plugin_access_control_api.errors import PermissionDeniedError, RateLimitedError
+from nonebot_plugin_access_control_api.errors import (
+    PermissionDeniedError,
+    RateLimitedError,
+)
 from nonebot_plugin_access_control_api.service.interface import IService
 from nonebot_plugin_access_control_api.service.interface.patcher import IServicePatcher
 
@@ -31,11 +39,15 @@ class ServicePatcherImpl(IServicePatcher):
                 bot = current_bot.get()
                 event = current_event.get()
 
-                if not await self.service.check(bot, event, acquire_rate_limit_token=False):
+                if not await self.service.check(
+                    bot, event, acquire_rate_limit_token=False
+                ):
                     raise PermissionDeniedError()
 
-                result = await self.service.acquire_token_for_rate_limit_receiving_result(
-                    bot, event
+                result = (
+                    await self.service.acquire_token_for_rate_limit_receiving_result(
+                        bot, event
+                    )
                 )
                 if not result.success:
                     raise RateLimitedError(result)

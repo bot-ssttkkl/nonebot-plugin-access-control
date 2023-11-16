@@ -3,7 +3,12 @@ from typing import Optional
 
 from nonebot import logger
 from nonebot_plugin_access_control_api.context import context
-from nonebot_plugin_access_control_api.event_bus import EventType, T_Listener, on_event, fire_event
+from nonebot_plugin_access_control_api.event_bus import (
+    EventType,
+    T_Listener,
+    on_event,
+    fire_event,
+)
 from nonebot_plugin_access_control_api.models.permission import Permission
 from nonebot_plugin_access_control_api.service.interface.permission import (
     IServicePermission,
@@ -42,7 +47,7 @@ class ServicePermissionImpl(IServicePermission):
         )
 
     async def get_permission_by_subject(
-            self, *subject: str, trace: bool = True
+        self, *subject: str, trace: bool = True
     ) -> Optional[Permission]:
         for sub in subject:
             if trace:
@@ -56,7 +61,7 @@ class ServicePermissionImpl(IServicePermission):
         return None
 
     async def get_permissions(
-            self, *, trace: bool = True
+        self, *, trace: bool = True
     ) -> AsyncGenerator[Permission, None]:
         if trace:
             for node in self.service.trace():
@@ -68,7 +73,7 @@ class ServicePermissionImpl(IServicePermission):
 
     @classmethod
     async def get_all_permissions_by_subject(
-            cls, *subject: str
+        cls, *subject: str
     ) -> AsyncGenerator[Permission, None]:
         overridden_services = set()
         for sub in subject:

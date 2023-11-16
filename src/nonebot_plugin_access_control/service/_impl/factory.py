@@ -1,9 +1,15 @@
 from nonebot_plugin_access_control_api.context import context
 from nonebot_plugin_access_control_api.service.interface import IService
-from nonebot_plugin_access_control_api.service.interface.factory import IServiceComponentFactory
+from nonebot_plugin_access_control_api.service.interface.factory import (
+    IServiceComponentFactory,
+)
 from nonebot_plugin_access_control_api.service.interface.patcher import IServicePatcher
-from nonebot_plugin_access_control_api.service.interface.permission import IServicePermission
-from nonebot_plugin_access_control_api.service.interface.rate_limit import IServiceRateLimit
+from nonebot_plugin_access_control_api.service.interface.permission import (
+    IServicePermission,
+)
+from nonebot_plugin_access_control_api.service.interface.rate_limit import (
+    IServiceRateLimit,
+)
 
 from .patcher import ServicePatcherImpl
 from .permission import ServicePermissionImpl

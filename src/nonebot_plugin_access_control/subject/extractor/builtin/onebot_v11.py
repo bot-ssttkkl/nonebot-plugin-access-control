@@ -3,8 +3,8 @@ from typing import TYPE_CHECKING, Optional
 from nonebot import Bot
 from nonebot.internal.adapter import Event
 
-from ...model import SubjectModel
-from ...manager import SubjectManager
+from nonebot_plugin_access_control_api.subject.model import SubjectModel
+from nonebot_plugin_access_control_api.subject.manager import SubjectManager
 
 if TYPE_CHECKING:
     from nonebot.adapters.onebot.v11.event import Sender

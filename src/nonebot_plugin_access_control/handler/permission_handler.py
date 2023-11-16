@@ -6,7 +6,8 @@ from nonebot_plugin_access_control_api.errors import (
 )
 from nonebot_plugin_access_control_api.models.permission import Permission
 from nonebot_plugin_access_control_api.service import (
-    get_service_by_qualified_name, Service
+    get_service_by_qualified_name,
+    Service,
 )
 
 from .utils.permission import require_superuser_or_script
@@ -22,8 +23,8 @@ def _map_permission(p: Permission, query_service_name: Optional[str] = None) -> 
 
     s += f"'{p.subject}'"
     if (
-            query_service_name is not None
-            and p.service.qualified_name != query_service_name
+        query_service_name is not None
+        and p.service.qualified_name != query_service_name
     ):
         s += f" (继承自服务 '{p.service.qualified_name}')"
 
@@ -32,7 +33,7 @@ def _map_permission(p: Permission, query_service_name: Optional[str] = None) -> 
 
 @require_superuser_or_script
 async def set_(
-        f: TextIO, service_name: Optional[str], subject: Optional[str], allow: bool
+    f: TextIO, service_name: Optional[str], subject: Optional[str], allow: bool
 ):
     if not subject or not service_name:
         raise AccessControlBadRequestError("请指定服务名（--service）与主体（--subject）")

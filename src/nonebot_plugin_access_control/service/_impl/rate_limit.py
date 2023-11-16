@@ -4,7 +4,12 @@ from typing import Optional
 
 from nonebot import logger
 from nonebot_plugin_access_control_api.context import context
-from nonebot_plugin_access_control_api.event_bus import EventType, T_Listener, on_event, fire_event
+from nonebot_plugin_access_control_api.event_bus import (
+    EventType,
+    T_Listener,
+    on_event,
+    fire_event,
+)
 from nonebot_plugin_access_control_api.models.rate_limit import (
     RateLimitRule,
     IRateLimitToken,
@@ -22,7 +27,7 @@ from ...repository.rate_limit_token import IRateLimitTokenRepository
 
 class RateLimitTokenImpl(IRateLimitToken):
     def __init__(
-            self, tokens: Collection[RateLimitSingleToken], service: "ServiceRateLimitImpl"
+        self, tokens: Collection[RateLimitSingleToken], service: "ServiceRateLimitImpl"
     ):
         self.tokens = tokens
         self.service = service
@@ -55,13 +60,13 @@ class ServiceRateLimitImpl(IServiceRateLimit):
 
     @classmethod
     async def _get_rules_by_subject(
-            cls, service: Optional[IService], subject: Optional[str]
+        cls, service: Optional[IService], subject: Optional[str]
     ) -> AsyncGenerator[RateLimitRule, None]:
         async for x in cls.repo.get_rules_by_subject(service, subject):
             yield x
 
     async def get_rate_limit_rules_by_subject(
-            self, *subject: str, trace: bool = True
+        self, *subject: str, trace: bool = True
     ) -> AsyncGenerator[RateLimitRule, None]:
         for sub in subject:
             if trace:
@@ -77,7 +82,7 @@ class ServiceRateLimitImpl(IServiceRateLimit):
                         return
 
     async def get_rate_limit_rules(
-            self, *, trace: bool = True
+        self, *, trace: bool = True
     ) -> AsyncGenerator[RateLimitRule, None]:
         if trace:
             for node in self.service.trace():
@@ -89,7 +94,7 @@ class ServiceRateLimitImpl(IServiceRateLimit):
 
     @classmethod
     async def get_all_rate_limit_rules_by_subject(
-            cls, *subject: str
+        cls, *subject: str
     ) -> AsyncGenerator[RateLimitRule, None]:
         for sub in subject:
             async for x in cls._get_rules_by_subject(None, sub):
@@ -116,7 +121,7 @@ class ServiceRateLimitImpl(IServiceRateLimit):
             )
 
     async def add_rate_limit_rule(
-            self, subject: str, time_span: timedelta, limit: int, overwrite: bool = False
+        self, subject: str, time_span: timedelta, limit: int, overwrite: bool = False
     ) -> RateLimitRule:
         rule = await self.repo.add_rate_limit_rule(
             self.service, subject, time_span, limit, overwrite
@@ -135,13 +140,13 @@ class ServiceRateLimitImpl(IServiceRateLimit):
 
     @classmethod
     async def _get_first_expire_token(
-            cls, rule: RateLimitRule, user: str
+        cls, rule: RateLimitRule, user: str
     ) -> Optional[RateLimitSingleToken]:
         return await cls.token_repo.get_first_expire_token(rule, user)
 
     @classmethod
     async def _acquire_token(
-            cls, rule: RateLimitRule, user: str
+        cls, rule: RateLimitRule, user: str
     ) -> Optional[RateLimitSingleToken]:
         x = await cls.token_repo.acquire_token(rule, user)
         if x is not None:
@@ -162,7 +167,7 @@ class ServiceRateLimitImpl(IServiceRateLimit):
         )
 
     async def acquire_token_for_rate_limit_by_subjects_receiving_result(
-            self, *subject: str
+        self, *subject: str
     ) -> AcquireTokenResult:
         assert len(subject) > 0, "require at least one subject"
         user = subject[0]
@@ -195,8 +200,8 @@ class ServiceRateLimitImpl(IServiceRateLimit):
             for rule in violating_rules:
                 _first_expire_token = await self._get_first_expire_token(rule, user)
                 if (
-                        first_expire_token is None
-                        or _first_expire_token.expire_time < first_expire_token.expire_time
+                    first_expire_token is None
+                    or _first_expire_token.expire_time < first_expire_token.expire_time
                 ):
                     first_expire_token = _first_expire_token
 
