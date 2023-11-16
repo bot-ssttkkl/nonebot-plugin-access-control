@@ -4,9 +4,9 @@ from nonebot import Bot
 from nonebot.internal.adapter import Event
 from nonebot_plugin_session import Session, SessionLevel, extract_session
 
-from ...model import SubjectModel
-from ...manager import SubjectManager
-from ....utils.superuser import is_superuser
+from nonebot_plugin_access_control_api.subject.model import SubjectModel
+from nonebot_plugin_access_control_api.subject.manager import SubjectManager
+from nonebot_plugin_access_control_api.utils.superuser import is_superuser
 
 OFFER_BY = "nonebot_plugin_access_control"
 

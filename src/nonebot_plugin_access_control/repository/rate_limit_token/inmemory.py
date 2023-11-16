@@ -1,5 +1,7 @@
 from nonebot import require
 
+from nonebot_plugin_access_control_api.context import context
+
 require("nonebot_plugin_apscheduler")
 
 from datetime import datetime
@@ -8,8 +10,12 @@ from typing import Optional, NamedTuple
 from nonebot_plugin_apscheduler import scheduler
 from apscheduler.triggers.interval import IntervalTrigger
 
-from .interface import TokenStorage
-from ....rate_limit import RateLimitRule, RateLimitSingleToken
+from nonebot_plugin_access_control_api.models.rate_limit import (
+    RateLimitRule,
+    RateLimitSingleToken,
+)
+
+from .interface import IRateLimitTokenRepository
 
 
 class StorageKey(NamedTuple):
@@ -24,10 +30,17 @@ def _handle_expired(
     return tuple(filter(lambda x: x.expire_time > now, tokens))
 
 
-class InmemoryTokenStorage(TokenStorage):
+@context.bind_singleton_to(IRateLimitTokenRepository)
+class InmemoryTokenRepository(IRateLimitTokenRepository):
     def __init__(self):
         self.id_cnt = 0
         self.data: dict[StorageKey, tuple[RateLimitSingleToken, ...]] = {}
+
+        scheduler.add_job(
+            self.delete_outdated_tokens,
+            IntervalTrigger(minutes=1),
+            id="delete_outdated_tokens_inmemory",
+        )
 
     def next_id(self) -> int:
         self.id_cnt += 1
@@ -76,21 +89,13 @@ class InmemoryTokenStorage(TokenStorage):
     async def delete_outdated_tokens(self):
         del_keys = set()
 
-        for k in inmemory_storage.data:
-            inmemory_storage.data[k] = _handle_expired(inmemory_storage.data[k])
-            if len(inmemory_storage.data[k]) == 0:
+        for k in self.data:
+            self.data[k] = _handle_expired(self.data[k])
+            if len(self.data[k]) == 0:
                 del_keys.add(k)
 
         for k in del_keys:
-            del inmemory_storage.data[k]
+            del self.data[k]
 
-
-inmemory_storage = InmemoryTokenStorage()
-
-scheduler.scheduled_job(
-    IntervalTrigger(minutes=1), id="delete_outdated_tokens_inmemory"
-)(inmemory_storage.delete_outdated_tokens)
-
-
-def get_inmemory_token_storage(**kwargs) -> TokenStorage:
-    return inmemory_storage
+    async def clear_token(self):
+        self.data = {}

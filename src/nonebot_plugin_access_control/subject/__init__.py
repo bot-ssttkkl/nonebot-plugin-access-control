@@ -1,1 +1,1 @@
-from .extractor import *
+from . import extractor  # noqa
