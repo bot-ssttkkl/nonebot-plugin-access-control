@@ -15,6 +15,7 @@ from nonebot_plugin_access_control_api.errors import (
     PermissionDeniedError,
     RateLimitedError,
 )
+from nonebot_plugin_access_control_api.models.rate_limit import AcquireTokenResult
 from nonebot_plugin_access_control_api.service.interface import IService
 from nonebot_plugin_access_control_api.service.interface.patcher import IServicePatcher
 
@@ -27,6 +28,24 @@ class ServicePatcherImpl(IServicePatcher):
     def __init__(self, service: IService):
         self.service = service
 
+    @classmethod
+    async def handle_permission_denied(cls, matcher: Matcher):
+        if conf().access_control_reply_on_permission_denied_enabled:
+            await matcher.send(conf().access_control_reply_on_permission_denied)
+
+    @classmethod
+    async def handle_rate_limited(cls, matcher: Matcher, result: AcquireTokenResult):
+        if conf().access_control_reply_on_rate_limited_enabled:
+            msg = conf().access_control_reply_on_rate_limited
+            if msg is None:
+                now = datetime.utcnow()
+                available_time = result.available_time
+                msg = (
+                    "使用太频繁了，请稍后再试。"
+                    f"下次可用时间：{available_time.timestamp() - now.timestamp():.0f}秒后"
+                )
+            await matcher.send(msg)
+
     def patch_matcher(self, matcher: type[Matcher]) -> type[Matcher]:
         self._matcher_service_mapping[matcher] = self.service
         logger.debug(f"patched {matcher}  (with service {self.service.qualified_name})")
@@ -38,11 +57,13 @@ class ServicePatcherImpl(IServicePatcher):
             async def wrapped_func(*args, **kwargs):
                 bot = current_bot.get()
                 event = current_event.get()
+                matcher = current_matcher.get()
 
                 if not await self.service.check(
-                    bot, event, acquire_rate_limit_token=False
+                        bot, event, acquire_rate_limit_token=False
                 ):
-                    raise PermissionDeniedError()
+                    await self.handle_permission_denied(matcher)
+                    return
 
                 result = (
                     await self.service.acquire_token_for_rate_limit_receiving_result(
@@ -50,9 +71,9 @@ class ServicePatcherImpl(IServicePatcher):
                     )
                 )
                 if not result.success:
-                    raise RateLimitedError(result)
+                    await self.handle_rate_limited(matcher, result)
+                    return
 
-                matcher = current_matcher.get()
                 matcher.state["ac_token"] = result.token
 
                 try:
@@ -76,18 +97,8 @@ async def check(matcher: Matcher, bot: Bot, event: Event):
     try:
         await service.check(bot, event, throw_on_fail=True)
     except PermissionDeniedError:
-        if conf().access_control_reply_on_permission_denied_enabled:
-            await matcher.send(conf().access_control_reply_on_permission_denied)
+        await ServicePatcherImpl.handle_permission_denied(matcher)
         raise IgnoredException("permission denied (by nonebot_plugin_access_control)")
     except RateLimitedError as e:
-        if conf().access_control_reply_on_rate_limited_enabled:
-            msg = conf().access_control_reply_on_rate_limited
-            if msg is None:
-                now = datetime.utcnow()
-                available_time = e.result.available_time
-                msg = (
-                    "使用太频繁了，请稍后再试。"
-                    f"下次可用时间：{available_time.timestamp() - now.timestamp():.0f}秒后"
-                )
-            await matcher.send(msg)
+        await ServicePatcherImpl.handle_rate_limited(matcher, e.result)
         raise IgnoredException("rate limited (by nonebot_plugin_access_control)")
