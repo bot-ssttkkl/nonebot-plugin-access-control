@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "nonebot-plugin-access-control"
-version = "1.1.0"
+version = "1.1.1"
 description = ""
 authors = ["ssttkkl <huang.wen.long@hotmail.com>"]
 license = "MIT"
@@ -13,10 +13,10 @@ packages = [
 [tool.poetry.dependencies]
 python = "^3.9"
 nonebot2 = "^2.1.0"
-nonebot-plugin-access-control-api = "^1.1.0"
+nonebot-plugin-access-control-api = "^1.1.1"
 nonebot-plugin-apscheduler = ">=0.3.0"
 nonebot-plugin-session = "^0.2.0"
-nonebot-plugin-orm = "^0.5.0"
+nonebot-plugin-orm = ">=0.5.0, <1.0.0"
 arclet-alconna = "^1.7.24"
 shortuuid = "^1.0.11"
 pytimeparser = "^0.2.0"

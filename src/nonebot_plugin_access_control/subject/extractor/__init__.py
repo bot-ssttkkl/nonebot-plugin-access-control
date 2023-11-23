@@ -15,6 +15,7 @@ extractor_chain.add_first(
     extract_qqguild_role,
     extract_kaiheila_role,
 )
+logger.debug(f"added default subject extractors")
 
 
 def extract_subjects_from_session(session: Session) -> Sequence[str]:
