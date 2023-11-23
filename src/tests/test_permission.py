@@ -1,14 +1,20 @@
 import pytest
 from nonebug import App
 
-from .utils.event import fake_ob11_group_message_event, SELF_ID
+from .utils.ob11_event import SELF_ID, fake_ob11_group_message_event
 
 
 @pytest.mark.asyncio
 async def test_permission(app: App):
     from nonebot.adapters.onebot.v11 import Bot
-    from nonebot_plugin_ac_demo.matcher_demo import a_matcher, b_matcher, c_matcher, group1
     from nonebot_plugin_access_control_api.service import get_nonebot_service
+
+    from nonebot_plugin_ac_demo.matcher_demo import (
+        group1,
+        a_matcher,
+        b_matcher,
+        c_matcher,
+    )
 
     # service: nonebot
     # subject: all

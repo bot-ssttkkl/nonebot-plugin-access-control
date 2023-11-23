@@ -2,7 +2,6 @@ from typing import TYPE_CHECKING, Optional
 
 from nonebot import Bot
 from nonebot.internal.adapter import Event
-
 from nonebot_plugin_access_control_api.subject.model import SubjectModel
 from nonebot_plugin_access_control_api.subject.manager import SubjectManager
 

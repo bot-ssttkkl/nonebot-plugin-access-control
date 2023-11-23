@@ -1,25 +1,26 @@
-from datetime import datetime
 from functools import wraps
+from datetime import datetime
 
-from nonebot import logger, Bot
-from nonebot.exception import IgnoredException
+from nonebot import Bot, logger
 from nonebot.internal.adapter import Event
+from nonebot.message import run_preprocessor
+from nonebot.exception import IgnoredException
+from nonebot_plugin_access_control_api.service.interface import IService
+from nonebot_plugin_access_control_api.models.rate_limit import AcquireTokenResult
+from nonebot_plugin_access_control_api.service.interface.patcher import IServicePatcher
+from nonebot_plugin_access_control_api.errors import (
+    RateLimitedError,
+    PermissionDeniedError,
+)
 from nonebot.internal.matcher import (
     Matcher,
     current_bot,
     current_event,
     current_matcher,
 )
-from nonebot.message import run_preprocessor
-from nonebot_plugin_access_control_api.errors import (
-    PermissionDeniedError,
-    RateLimitedError,
-)
-from nonebot_plugin_access_control_api.models.rate_limit import AcquireTokenResult
-from nonebot_plugin_access_control_api.service.interface import IService
-from nonebot_plugin_access_control_api.service.interface.patcher import IServicePatcher
 
 from ...config import conf
+from ...repository.utils import use_ac_session
 
 
 class ServicePatcherImpl(IServicePatcher):
@@ -59,17 +60,17 @@ class ServicePatcherImpl(IServicePatcher):
                 event = current_event.get()
                 matcher = current_matcher.get()
 
-                if not await self.service.check(
+                async with use_ac_session():
+                    if not await self.service.check(
                         bot, event, acquire_rate_limit_token=False
-                ):
-                    await self.handle_permission_denied(matcher)
-                    return
+                    ):
+                        await self.handle_permission_denied(matcher)
+                        return
 
-                result = (
-                    await self.service.acquire_token_for_rate_limit_receiving_result(
+                    result = await self.service.acquire_token_for_rate_limit_receiving_result(
                         bot, event
                     )
-                )
+
                 if not result.success:
                     await self.handle_rate_limited(matcher, result)
                     return
@@ -95,7 +96,8 @@ async def check(matcher: Matcher, bot: Bot, event: Event):
         return
 
     try:
-        await service.check(bot, event, throw_on_fail=True)
+        async with use_ac_session():
+            await service.check(bot, event, throw_on_fail=True)
     except PermissionDeniedError:
         await ServicePatcherImpl.handle_permission_denied(matcher)
         raise IgnoredException("permission denied (by nonebot_plugin_access_control)")

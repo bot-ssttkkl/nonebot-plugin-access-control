@@ -4,14 +4,20 @@ from datetime import timedelta
 import pytest
 from nonebug import App
 
-from .utils.event import fake_ob11_group_message_event, SELF_ID
+from .utils.ob11_event import SELF_ID, fake_ob11_group_message_event
 
 
 @pytest.mark.asyncio
 async def test_rate_limit(app: App):
     from nonebot.adapters.onebot.v11 import Bot
-    from nonebot_plugin_ac_demo.matcher_demo import a_matcher, b_matcher, c_matcher, group1
     from nonebot_plugin_access_control_api.service import get_nonebot_service
+
+    from nonebot_plugin_ac_demo.matcher_demo import (
+        group1,
+        a_matcher,
+        b_matcher,
+        c_matcher,
+    )
 
     # service: nonebot
     # subject: all
@@ -55,8 +61,14 @@ async def test_rate_limit(app: App):
 @pytest.mark.asyncio
 async def test_rate_limit_overwrite(app: App):
     from nonebot.adapters.onebot.v11 import Bot
-    from nonebot_plugin_ac_demo.matcher_demo import a_matcher, b_matcher, c_matcher, group1
     from nonebot_plugin_access_control_api.service import get_nonebot_service
+
+    from nonebot_plugin_ac_demo.matcher_demo import (
+        group1,
+        a_matcher,
+        b_matcher,
+        c_matcher,
+    )
 
     # service: nonebot
     # subject: all
@@ -68,7 +80,9 @@ async def test_rate_limit_overwrite(app: App):
     # span: 2s
     # limit: 2
     # overwrite
-    await group1.add_rate_limit_rule("qq:23456", timedelta(seconds=1), 5, overwrite=True)
+    await group1.add_rate_limit_rule(
+        "qq:23456", timedelta(seconds=1), 5, overwrite=True
+    )
 
     async with app.test_matcher(a_matcher) as ctx:
         bot = ctx.create_bot(base=Bot, self_id=str(SELF_ID))

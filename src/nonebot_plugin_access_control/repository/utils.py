@@ -1,5 +1,4 @@
 import contextvars
-import traceback
 from contextlib import AbstractAsyncContextManager, asynccontextmanager
 
 from nonebot import logger

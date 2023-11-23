@@ -10,5 +10,10 @@ def ac_set_script_env():
     _env = "script"
 
 
+def ac_set_nonebot_env():
+    global _env
+    _env = "nonebot"
+
+
 def ac_get_env() -> T_ENV:
     return _env

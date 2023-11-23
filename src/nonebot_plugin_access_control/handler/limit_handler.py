@@ -1,9 +1,8 @@
 from typing import TextIO, Optional
 
 import pytimeparser
-
-from nonebot_plugin_access_control_api.models.rate_limit import RateLimitRule
 from nonebot_plugin_access_control_api.service import Service
+from nonebot_plugin_access_control_api.models.rate_limit import RateLimitRule
 from nonebot_plugin_access_control_api.service.methods import (
     get_service_by_qualified_name,
 )
@@ -12,6 +11,7 @@ from nonebot_plugin_access_control_api.errors import (
     AccessControlBadRequestError,
 )
 
+from ..repository.utils import use_ac_session
 from .utils.permission import require_superuser_or_script
 
 
@@ -51,13 +51,14 @@ async def add(
     except ValueError:
         raise AccessControlBadRequestError("给定的限制时间段（--span）不合法")
 
-    service = get_service_by_qualified_name(service_name)
-    if service is None:
-        raise AccessControlQueryError(f"找不到服务 {service_name}")
+    async with use_ac_session():
+        service = get_service_by_qualified_name(service_name)
+        if service is None:
+            raise AccessControlQueryError(f"找不到服务 {service_name}")
 
-    rule = await service.add_rate_limit_rule(
-        subject, parsed_time_span, limit, overwrite or False
-    )
+        rule = await service.add_rate_limit_rule(
+            subject, parsed_time_span, limit, overwrite or False
+        )
     _map_rule(f, rule, service_name)
 
 
@@ -69,7 +70,8 @@ async def rm(
     if not rule_id:
         raise AccessControlBadRequestError("请指定限流规则ID")
 
-    ok = await Service.remove_rate_limit_rule(rule_id)
+    async with use_ac_session():
+        ok = await Service.remove_rate_limit_rule(rule_id)
     if ok:
         f.write("删除成功")
     else:
@@ -78,17 +80,24 @@ async def rm(
 
 @require_superuser_or_script
 async def ls(f: TextIO, service_name: Optional[str], subject: Optional[str]):
-    if not service_name and not subject:
-        rules = [x async for x in Service.get_all_rate_limit_rules()]
-    elif not service_name:
-        rules = [x async for x in Service.get_all_rate_limit_rules_by_subject(subject)]
-    else:
-        service = get_service_by_qualified_name(service_name, raise_on_not_exists=True)
-
-        if not subject:
-            rules = [x async for x in service.get_rate_limit_rules()]
+    async with use_ac_session():
+        if not service_name and not subject:
+            rules = [x async for x in Service.get_all_rate_limit_rules()]
+        elif not service_name:
+            rules = [
+                x async for x in Service.get_all_rate_limit_rules_by_subject(subject)
+            ]
         else:
-            rules = [x async for x in service.get_rate_limit_rules_by_subject(subject)]
+            service = get_service_by_qualified_name(
+                service_name, raise_on_not_exists=True
+            )
+
+            if not subject:
+                rules = [x async for x in service.get_rate_limit_rules()]
+            else:
+                rules = [
+                    x async for x in service.get_rate_limit_rules_by_subject(subject)
+                ]
 
     if len(rules) != 0:
         # 按照服务全称、subject排序
@@ -105,5 +114,6 @@ async def ls(f: TextIO, service_name: Optional[str], subject: Optional[str]):
 async def reset(
     f: TextIO,
 ):
-    await Service.clear_rate_limit_tokens()
+    async with use_ac_session():
+        await Service.clear_rate_limit_tokens()
     f.write("成功")
