@@ -159,8 +159,7 @@ class ServiceRateLimitImpl(IServiceRateLimit):
 
     @classmethod
     async def _retire_token(cls, token: RateLimitSingleToken):
-        repo = cls.token_repo.require(IRateLimitTokenRepository)
-        await repo.retire_token(token)
+        await cls.token_repo.retire_token(token)
         logger.trace(
             f"[rate limit] token {token.id} retired for "
             f"rule {token.rule_id} by user {token.user}"
