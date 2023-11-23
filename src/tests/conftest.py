@@ -8,6 +8,8 @@ def pytest_configure(config: pytest.Config) -> None:
         "log_level": "DEBUG",
         "sqlalchemy_database_url": "sqlite+aiosqlite:///:memory:",
         "alembic_startup_check": False,
+        "access_control_reply_on_permission_denied_enabled": False,
+        "access_control_reply_on_rate_limited_enabled": False,
     }
 
 
