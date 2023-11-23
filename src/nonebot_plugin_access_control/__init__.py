@@ -33,3 +33,4 @@ from . import service  # noqa
 from . import matcher  # noqa
 from . import patcher  # noqa
 from . import datastore  # noqa
+from . import subject  # noqa
