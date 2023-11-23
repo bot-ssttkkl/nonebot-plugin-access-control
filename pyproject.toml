@@ -36,12 +36,17 @@ setuptools = "^68.1.2"
 nb-cli = "^1.2.5"
 nonebot-plugin-orm = {extras = ["default"], version = "^0.5.0"}
 
+nonebot2 = {extras = ["fastapi"], version = "^2.1.2"}
 nonebot-adapter-onebot = "*"
 nonebot-adapter-kaiheila = "*"
 nonebot-adapter-qqguild = "*"
 nonebot-adapter-telegram = "*"
 nonebot-adapter-console = "*"
 nonebot-adapter-feishu = "*"
+
+nonebug = "^0.3.5"
+pytest = "^7.4.3"
+pytest-asyncio = "^0.21.1"
 
 
 [tool.black]
