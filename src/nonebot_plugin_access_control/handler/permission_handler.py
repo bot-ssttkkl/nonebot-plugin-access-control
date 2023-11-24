@@ -1,15 +1,16 @@
 from typing import TextIO, Optional
 
+from nonebot_plugin_access_control_api.models.permission import Permission
+from nonebot_plugin_access_control_api.service import (
+    Service,
+    get_service_by_qualified_name,
+)
 from nonebot_plugin_access_control_api.errors import (
     AccessControlQueryError,
     AccessControlBadRequestError,
 )
-from nonebot_plugin_access_control_api.models.permission import Permission
-from nonebot_plugin_access_control_api.service import (
-    get_service_by_qualified_name,
-    Service,
-)
 
+from ..repository.utils import use_ac_session
 from .utils.permission import require_superuser_or_script
 
 
@@ -38,8 +39,9 @@ async def set_(
     if not subject or not service_name:
         raise AccessControlBadRequestError("请指定服务名（--service）与主体（--subject）")
 
-    service = get_service_by_qualified_name(service_name, raise_on_not_exists=True)
-    await service.set_permission(subject, allow)
+    async with use_ac_session():
+        service = get_service_by_qualified_name(service_name, raise_on_not_exists=True)
+        await service.set_permission(subject, allow)
     p = Permission(service, subject, allow)
     f.write(_map_permission(p))
 
@@ -49,8 +51,9 @@ async def rm(f: TextIO, service_name: Optional[str], subject: Optional[str]):
     if not subject or not service_name:
         raise AccessControlBadRequestError("请指定服务名（--service）与主体（--subject）")
 
-    service = get_service_by_qualified_name(service_name, raise_on_not_exists=True)
-    ok = await service.remove_permission(subject)
+    async with use_ac_session():
+        service = get_service_by_qualified_name(service_name, raise_on_not_exists=True)
+        ok = await service.remove_permission(subject)
     if ok:
         f.write("删除成功")
     else:
@@ -59,16 +62,21 @@ async def rm(f: TextIO, service_name: Optional[str], subject: Optional[str]):
 
 @require_superuser_or_script
 async def ls(f: TextIO, service_name: Optional[str], subject: Optional[str]):
-    if not service_name and not subject:
-        permissions = [x async for x in Service.get_all_permissions()]
-    elif not service_name:
-        permissions = [x async for x in Service.get_all_permissions_by_subject(subject)]
-    else:
-        service = get_service_by_qualified_name(service_name, raise_on_not_exists=True)
-        if not subject:
-            permissions = [x async for x in service.get_permissions()]
+    async with use_ac_session():
+        if not service_name and not subject:
+            permissions = [x async for x in Service.get_all_permissions()]
+        elif not service_name:
+            permissions = [
+                x async for x in Service.get_all_permissions_by_subject(subject)
+            ]
         else:
-            permissions = [await service.get_permission_by_subject(subject)]
+            service = get_service_by_qualified_name(
+                service_name, raise_on_not_exists=True
+            )
+            if not subject:
+                permissions = [x async for x in service.get_permissions()]
+            else:
+                permissions = [await service.get_permission_by_subject(subject)]
 
     if len(permissions) != 0:
         # 按照服务全称、先allow再deny、subject排序

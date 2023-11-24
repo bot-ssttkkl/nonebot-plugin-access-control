@@ -17,10 +17,10 @@ async def _(matcher: Matcher):
 
 b_matcher = on_command("b", priority=99)
 b_service = group1.create_subservice("b")
-b_service.patch_matcher(b_matcher)
 
 
 @b_matcher.handle()
+@b_service.patch_handler()
 async def _(matcher: Matcher):
     await matcher.send("b")
 

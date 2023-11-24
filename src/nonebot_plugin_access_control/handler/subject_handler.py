@@ -1,7 +1,6 @@
 from typing import TextIO
 
 from nonebot.internal.matcher import current_bot, current_event
-
 from nonebot_plugin_access_control_api.subject import extract_subjects
 from nonebot_plugin_access_control_api.errors import AccessControlBadRequestError
 

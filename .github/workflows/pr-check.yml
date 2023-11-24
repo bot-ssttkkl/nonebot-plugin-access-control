@@ -1,23 +1,21 @@
 # This workflow will install Python dependencies, run tests and lint with a variety of Python versions
 # For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-python
 
-name: Run Test
+name: PR Check
 
 on:
-  push:
-    branches: [ "master" ]
   pull_request:
-    branches: [ "master" ]
 
 jobs:
-  build:
+  test:
 
-    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.9", "3.10", "3.11"]
+        os: [ macos-latest, windows-latest, ubuntu-latest ]
+        python-version: ["3.9", "3.10", "3.11", "3.12"]
 
+    runs-on: ${{ matrix.os }}
     steps:
     - uses: actions/checkout@v3
     - name: Set up Python ${{ matrix.python-version }}
@@ -27,7 +25,8 @@ jobs:
     - name: Install requirements
       run: |
         pip install poetry
-        poetry install --with dev
+        poetry export --with=dev --without-hashes -o requirements.txt
+        pip install -r requirements.txt
     - name: Test with pytest
-      run: poetry run pytest --cov-report xml --cov=./src/nonebot_plugin_access_control
+      run: pytest
 

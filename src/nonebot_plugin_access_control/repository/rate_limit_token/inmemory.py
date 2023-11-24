@@ -1,5 +1,4 @@
 from nonebot import require
-
 from nonebot_plugin_access_control_api.context import context
 
 require("nonebot_plugin_apscheduler")
@@ -9,7 +8,6 @@ from typing import Optional, NamedTuple
 
 from nonebot_plugin_apscheduler import scheduler
 from apscheduler.triggers.interval import IntervalTrigger
-
 from nonebot_plugin_access_control_api.models.rate_limit import (
     RateLimitRule,
     RateLimitSingleToken,

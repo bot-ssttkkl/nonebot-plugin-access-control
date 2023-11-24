@@ -1,0 +1,50 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - v*
+
+jobs:
+  publish-pypi-github:
+    runs-on: ubuntu-latest
+    environment:
+      name: release
+      url: https://pypi.org/p/nonebot-plugin-access-control
+    permissions:
+      id-token: write # IMPORTANT: this permission is mandatory for trusted publishing
+      # write permission is required to create a github release
+      contents: write
+      # write permission is required for autolabeler
+      # otherwise, read permission is required at least
+      pull-requests: write
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup Python environment
+        uses: actions/setup-python@v3
+        with:
+          python-version: "3.11"
+
+      - run: |
+          echo "TAG_NAME=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
+
+      - uses: release-drafter/release-drafter@v5
+        with:
+          name: Release ${{ env.TAG_NAME }}
+          tag: ${{ env.TAG_NAME }}
+          publish: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Publish PyPI and Github
+        run: |
+          poetry build
+          ls dist/
+          gh release upload --clobber ${{ env.TAG_NAME }} dist/*.tar.gz dist/*.whl
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Publish pypi
+        uses: pypa/gh-action-pypi-publish@release/v1

@@ -3,7 +3,6 @@ from datetime import timedelta
 from collections.abc import AsyncGenerator
 
 from sqlalchemy import func, select
-
 from nonebot_plugin_access_control_api.context import context
 from nonebot_plugin_access_control_api.service.interface import IService
 from nonebot_plugin_access_control_api.errors import AccessControlQueryError

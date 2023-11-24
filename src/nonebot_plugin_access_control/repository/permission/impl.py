@@ -2,7 +2,6 @@ from typing import Optional
 from collections.abc import AsyncGenerator
 
 from sqlalchemy import select
-
 from nonebot_plugin_access_control_api.context import context
 from nonebot_plugin_access_control_api.service.interface import IService
 from nonebot_plugin_access_control_api.models.permission import Permission
