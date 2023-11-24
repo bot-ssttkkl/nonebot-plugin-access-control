@@ -1,7 +1,7 @@
 import pytest
 import pytest_asyncio
-from nonebug import NONEBOT_INIT_KWARGS
 from sqlalchemy import delete
+from nonebug import NONEBOT_INIT_KWARGS
 
 
 def pytest_configure(config: pytest.Config) -> None:
@@ -32,8 +32,12 @@ _orm_inited = False
 @pytest_asyncio.fixture(autouse=True)
 async def _init_orm(_prepare_nonebot):
     from nonebot_plugin_orm import init_orm, get_session
+
     from nonebot_plugin_access_control.repository.orm.permission import PermissionOrm
-    from nonebot_plugin_access_control.repository.orm.rate_limit import RateLimitRuleOrm, RateLimitTokenOrm
+    from nonebot_plugin_access_control.repository.orm.rate_limit import (
+        RateLimitRuleOrm,
+        RateLimitTokenOrm,
+    )
 
     global _orm_inited
 
