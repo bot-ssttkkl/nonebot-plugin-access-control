@@ -11,7 +11,7 @@ packages = [
 ]
 
 [tool.poetry.dependencies]
-python = "^3.8"
+python = "^3.9"
 nonebot2 = "^2.1.0"
 nonebot-plugin-access-control-api = "^1.1.1"
 nonebot-plugin-apscheduler = ">=0.3.0"
@@ -52,7 +52,7 @@ pytest-cov = "^4.1.0"
 
 [tool.black]
 line-length = 88
-target-version = ["py38", "py39", "py310", "py311", "py312"]
+target-version = ["py39", "py310", "py311", "py312"]
 include = '\.pyi?$'
 extend-exclude = '''
 '''
