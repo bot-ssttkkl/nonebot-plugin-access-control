@@ -42,14 +42,14 @@ async def test_limit_handler(app: App):
         res = f.getvalue().strip()
         rule_id[0] = res[1:6]
     with StringIO() as f:
-        await add(f, "nonebot_plugin_ac_demo", "qq:23456", 5, "30s", True)
+        await add(f, "nonebot_plugin_ac_demo.group1", "qq:23456", 5, "30s", True)
         res = f.getvalue().strip()
         rule_id[1] = res[1:6]
 
     rules = [
         x
         async for x in get_service_by_qualified_name(
-            "nonebot_plugin_ac_demo"
+            "nonebot_plugin_ac_demo.group1"
         ).get_rate_limit_rules()
     ]
     assert len(rules) == 2
@@ -66,7 +66,7 @@ async def test_limit_handler(app: App):
     assert rule[0].time_span == timedelta(minutes=1)
     assert rule[0].overwrite is False
 
-    assert rule[1].service.qualified_name == "nonebot_plugin_ac_demo"
+    assert rule[1].service.qualified_name == "nonebot_plugin_ac_demo.group1"
     assert rule[1].subject == "qq:23456"
     assert rule[1].limit == 5
     assert rule[1].time_span == timedelta(seconds=30)
@@ -82,15 +82,15 @@ async def test_limit_handler(app: App):
         await ls(f, None, "all")
         check_ls_res(f.getvalue(), [rule[0]], None)
 
-    # ls (service_name="nonebot_plugin_ac_demo", subject=None)
+    # ls (service_name="nonebot_plugin_ac_demo.group1", subject=None)
     with StringIO() as f:
-        await ls(f, "nonebot_plugin_ac_demo", None)
-        check_ls_res(f.getvalue(), rule, "nonebot_plugin_ac_demo")
+        await ls(f, "nonebot_plugin_ac_demo.group1", None)
+        check_ls_res(f.getvalue(), rule, "nonebot_plugin_ac_demo.group1")
 
-    # ls (service_name="nonebot_plugin_ac_demo", subject="qq:23456")
+    # ls (service_name="nonebot_plugin_ac_demo.group1", subject="qq:23456")
     with StringIO() as f:
-        await ls(f, "nonebot_plugin_ac_demo", "qq:23456")
-        check_ls_res(f.getvalue(), [rule[1]], "nonebot_plugin_ac_demo")
+        await ls(f, "nonebot_plugin_ac_demo.group1", "qq:23456")
+        check_ls_res(f.getvalue(), [rule[1]], "nonebot_plugin_ac_demo.group1")
 
     # rm
     with StringIO() as f:

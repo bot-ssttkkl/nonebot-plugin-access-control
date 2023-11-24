@@ -36,11 +36,11 @@ async def test_permission_handler(app: App):
     with StringIO() as f:
         await set_(f, "nonebot_plugin_ac_demo", "all", False)
     with StringIO() as f:
-        await set_(f, "nonebot_plugin_ac_demo", "qq:23456", True)
+        await set_(f, "nonebot_plugin_ac_demo.group1", "qq:23456", True)
 
     perm = [None, None]
     async for x in get_service_by_qualified_name(
-        "nonebot_plugin_ac_demo"
+        "nonebot_plugin_ac_demo.group1"
     ).get_permissions():
         if x.subject == "all":
             perm[0] = x
@@ -51,29 +51,29 @@ async def test_permission_handler(app: App):
     assert perm[0].subject == "all"
     assert perm[0].allow is False
 
-    assert perm[1].service.qualified_name == "nonebot_plugin_ac_demo"
+    assert perm[1].service.qualified_name == "nonebot_plugin_ac_demo.group1"
     assert perm[1].subject == "qq:23456"
     assert perm[1].allow is True
 
     # ls (service_name=None, subject=None)
     with StringIO() as f:
         await ls(f, None, None)
-        check_ls_res(f.getvalue(), perm)
+        check_ls_res(f.getvalue(), perm, None)
 
     # ls (service_name=None, subject="all")
     with StringIO() as f:
         await ls(f, None, "all")
-        check_ls_res(f.getvalue(), [perm[0]])
+        check_ls_res(f.getvalue(), [perm[0]], None)
 
-    # ls (service_name="nonebot_plugin_ac_demo", subject=None)
+    # ls (service_name="nonebot_plugin_ac_demo.group1", subject=None)
     with StringIO() as f:
-        await ls(f, "nonebot_plugin_ac_demo", None)
-        check_ls_res(f.getvalue(), perm)
+        await ls(f, "nonebot_plugin_ac_demo.group1", None)
+        check_ls_res(f.getvalue(), perm, "nonebot_plugin_ac_demo.group1")
 
-    # ls (service_name="nonebot_plugin_ac_demo", subject="qq:23456")
+    # ls (service_name="nonebot_plugin_ac_demo.group1", subject="qq:23456")
     with StringIO() as f:
-        await ls(f, "nonebot_plugin_ac_demo", "qq:23456")
-        check_ls_res(f.getvalue(), [perm[1]])
+        await ls(f, "nonebot_plugin_ac_demo.group1", "qq:23456")
+        check_ls_res(f.getvalue(), [perm[1]], "nonebot_plugin_ac_demo.group1")
 
     # rm
     with StringIO() as f:
@@ -82,4 +82,4 @@ async def test_permission_handler(app: App):
     # ls (service_name=None, subject=None)
     with StringIO() as f:
         await ls(f, None, None)
-        check_ls_res(f.getvalue(), [perm[1]])
+        check_ls_res(f.getvalue(), [perm[1]], None)
