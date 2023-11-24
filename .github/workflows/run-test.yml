@@ -10,7 +10,7 @@ on:
     branches: [ "master" ]
 
 jobs:
-  build:
+  test:
 
     runs-on: ubuntu-latest
     strategy:
@@ -29,5 +29,5 @@ jobs:
         pip install poetry
         poetry install --with dev
     - name: Test with pytest
-      run: poetry run pytest --cov-report xml --cov=./src/nonebot_plugin_access_control
+      run: poetry run pytest
 
