@@ -27,6 +27,10 @@ jobs:
         with:
           python-version: "3.11"
 
+      - name: Setup Poetry
+        run: |
+          pip install poetry
+
       - run: |
           echo "TAG_NAME=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
 
