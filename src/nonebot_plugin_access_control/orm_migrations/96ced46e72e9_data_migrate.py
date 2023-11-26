@@ -75,7 +75,7 @@ async def data_migrate(conn: AsyncConnection):
             # nonebot_plugin_access_control_rate_limit_rule
             result = await ds_sess.stream(
                 sa.text(
-                    "SELECT id, subject, service, time_span, `limit`, overwrite "
+                    'SELECT id, subject, service, time_span, "limit", overwrite '
                     "FROM nonebot_plugin_access_control_rate_limit_rule;"
                 )
             )
@@ -83,7 +83,7 @@ async def data_migrate(conn: AsyncConnection):
                 id, subject, service, time_span, limit, overwrite = row
                 await conn.execute(
                     sa.text(
-                        "INSERT INTO accctrl_rate_limit_rule (id, subject, service, time_span, `limit`, overwrite) "
+                        'INSERT INTO accctrl_rate_limit_rule (id, subject, service, time_span, "limit", overwrite) '
                         "VALUES (:id, :subject, :service, :time_span, :limit, :overwrite);"
                     ),
                     [
@@ -106,7 +106,7 @@ async def data_migrate(conn: AsyncConnection):
             # nonebot_plugin_access_control_rate_limit_token
             result = await ds_sess.stream(
                 sa.text(
-                    "SELECT id, rule_id, `user`, acquire_time, expire_time "
+                    'SELECT id, rule_id, "user", acquire_time, expire_time '
                     "FROM nonebot_plugin_access_control_rate_limit_token;"
                 )
             )
@@ -114,7 +114,7 @@ async def data_migrate(conn: AsyncConnection):
                 id, rule_id, user, acquire_time, expire_time = row
                 await conn.execute(
                     sa.text(
-                        "INSERT INTO accctrl_rate_limit_rule (id, rule_id, `user`, acquire_time, expire_time) "
+                        'INSERT INTO accctrl_rate_limit_rule (id, rule_id, "user", acquire_time, expire_time) '
                         "VALUES (:id, :rule_id, :user, :acquire_time, :expire_time);"
                     ),
                     [
