@@ -17,6 +17,7 @@ async def test_service_ls_handler(app: App):
         "│   ├── a\n"
         "│   └── b\n"
         "├── c\n"
+        "├── d\n"
         "└── tick"
     )
 

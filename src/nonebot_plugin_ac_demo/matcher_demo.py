@@ -1,5 +1,8 @@
 from nonebot import on_command
 from nonebot.internal.matcher import Matcher
+from nonebot_plugin_access_control_api.service.contextvars import (
+    current_rate_limit_token,
+)
 
 from .plugin_service import plugin_service
 
@@ -33,3 +36,21 @@ c_service = plugin_service.create_subservice("c")
 @c_service.patch_handler()
 async def _(matcher: Matcher):
     await matcher.send("c")
+
+
+d_counter = 0
+
+d_matcher = on_command("d", priority=99)
+d_service = plugin_service.create_subservice("d")
+
+
+@d_matcher.handle()
+@d_service.patch_handler()
+async def _(matcher: Matcher):
+    global d_counter
+    d_counter += 1
+    if d_counter % 2 == 0:
+        await current_rate_limit_token.get().retire()
+        await matcher.send("retired")
+    else:
+        await matcher.send("d")
