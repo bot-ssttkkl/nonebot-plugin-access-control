@@ -9,6 +9,9 @@ from nonebot_plugin_access_control_api.service.interface import IService
 from nonebot_plugin_access_control_api.service import get_nonebot_service
 from nonebot_plugin_access_control_api.models.rate_limit import AcquireTokenResult
 from nonebot_plugin_access_control_api.service.interface.patcher import IServicePatcher
+from nonebot_plugin_access_control_api.service.contextvars import (
+    current_rate_limit_token,
+)
 from nonebot_plugin_access_control_api.errors import (
     RateLimitedError,
     PermissionDeniedError,
@@ -76,14 +79,15 @@ class ServicePatcherImpl(IServicePatcher):
                     await self.handle_rate_limited(matcher, result)
                     return
 
-                matcher.state["ac_token"] = result.token
-
+                t = current_rate_limit_token.set(result.token)
                 try:
                     return await func(*args, **kwargs)
                 except BaseException as e:
                     if retire_on_throw:
                         await result.token.retire()
                     raise e
+                finally:
+                    current_rate_limit_token.reset(t)
 
             return wrapped_func
 
@@ -91,7 +95,7 @@ class ServicePatcherImpl(IServicePatcher):
 
 
 @run_preprocessor
-async def check(matcher: Matcher, bot: Bot, event: Event):
+async def check(bot: Bot, event: Event, matcher: Matcher):
     service = ServicePatcherImpl._matcher_service_mapping.get(type(matcher), None)
     if service is None:
         return
