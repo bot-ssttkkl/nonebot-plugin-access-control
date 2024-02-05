@@ -37,7 +37,9 @@ async def set_(
     f: TextIO, service_name: Optional[str], subject: Optional[str], allow: bool
 ):
     if not subject or not service_name:
-        raise AccessControlBadRequestError("请指定服务名（--service）与主体（--subject）")
+        raise AccessControlBadRequestError(
+            "请指定服务名（--service）与主体（--subject）"
+        )
 
     async with use_ac_session():
         service = get_service_by_qualified_name(service_name, raise_on_not_exists=True)
@@ -49,7 +51,9 @@ async def set_(
 @require_superuser_or_script
 async def rm(f: TextIO, service_name: Optional[str], subject: Optional[str]):
     if not subject or not service_name:
-        raise AccessControlBadRequestError("请指定服务名（--service）与主体（--subject）")
+        raise AccessControlBadRequestError(
+            "请指定服务名（--service）与主体（--subject）"
+        )
 
     async with use_ac_session():
         service = get_service_by_qualified_name(service_name, raise_on_not_exists=True)
