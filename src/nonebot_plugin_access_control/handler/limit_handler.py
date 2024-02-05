@@ -38,7 +38,9 @@ async def add(
     overwrite: Optional[bool],
 ):
     if not subject or not service_name:
-        raise AccessControlBadRequestError("请指定服务名（--service）与主体（--subject）")
+        raise AccessControlBadRequestError(
+            "请指定服务名（--service）与主体（--subject）"
+        )
     elif not time_span:
         raise AccessControlBadRequestError("请指定限制时间段（--span）")
     elif not limit:

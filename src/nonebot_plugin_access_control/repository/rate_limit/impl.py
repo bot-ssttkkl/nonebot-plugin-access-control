@@ -61,7 +61,9 @@ class RateLimitRepository(IRateLimitRepository):
                 cnt = (await sess.execute(stmt)).scalar_one()
 
                 if cnt > 0:
-                    raise AccessControlQueryError("已存在对该实体与服务的限流规则，不允许再添加覆写规则")
+                    raise AccessControlQueryError(
+                        "已存在对该实体与服务的限流规则，不允许再添加覆写规则"
+                    )
 
             orm = RateLimitRuleOrm(
                 subject=subject,
