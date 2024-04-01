@@ -5,6 +5,7 @@ Revises: 875c4dd8c271
 Create Date: 2023-08-31 22:26:07.794707
 
 """
+
 from datetime import datetime
 
 import sqlalchemy as sa
