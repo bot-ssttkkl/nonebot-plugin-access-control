@@ -1,7 +1,7 @@
 from typing import Literal, Optional
 
-from nonebot import get_driver
 from pydantic import Field
+from nonebot import get_driver
 from pydantic_settings import BaseSettings
 
 
