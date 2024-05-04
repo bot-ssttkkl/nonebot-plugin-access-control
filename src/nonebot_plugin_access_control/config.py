@@ -1,7 +1,8 @@
 from typing import Literal, Optional
 
+from pydantic import Field
 from nonebot import get_driver
-from pydantic import Field, BaseSettings
+from pydantic_settings import BaseSettings
 
 
 class Config(BaseSettings):
@@ -17,7 +18,7 @@ class Config(BaseSettings):
     access_control_reply_on_permission_denied_enabled: bool = False
     access_control_reply_on_permission_denied: str = "你没有权限执行该指令"
     access_control_reply_on_rate_limited_enabled: bool = True
-    access_control_reply_on_rate_limited: Optional[str]
+    access_control_reply_on_rate_limited: Optional[str] = None
 
     class Config:
         extra = "ignore"

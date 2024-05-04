@@ -12,15 +12,16 @@ packages = [
 
 [tool.poetry.dependencies]
 python = "^3.9"
-nonebot2 = "^2.1.0"
+nonebot2 = ">=2.2.0, <3.0.0"
 nonebot-plugin-access-control-api = "^1.1.2"
 nonebot-plugin-apscheduler = ">=0.3.0"
 nonebot-plugin-session = "^0.2.0"
-nonebot-plugin-orm = ">=0.5.0, <1.0.0"
+nonebot-plugin-orm = ">=0.7.0, <1.0.0"
 arclet-alconna = "^1.7.24"
 shortuuid = "^1.0.11"
 pytimeparser = "^0.2.0"
 ssttkkl-nonebot-utils = ">=0.1.17"
+pydantic-settings = "^2.2.1"
 
 nb-cli = { version = ">=1.2.0", optional = true }
 
@@ -33,13 +34,13 @@ black = "^23.1.0"
 pre-commit = "^3.1.0"
 
 setuptools = "^68.1.2"
-nb-cli = "^1.2.5"
-nonebot-plugin-orm = {extras = ["default"], version = "^0.5.0"}
+nb-cli = "*"
+nonebot-plugin-orm = {extras = ["default"], version = "*"}
 
-nonebot2 = {extras = ["fastapi"], version = "^2.1.2"}
+nonebot2 = {extras = ["fastapi"], version = "*"}
 nonebot-adapter-onebot = "*"
 nonebot-adapter-kaiheila = "*"
-nonebot-adapter-qqguild = "*"
+nonebot-adapter-qq = "*"
 nonebot-adapter-telegram = "*"
 nonebot-adapter-console = "*"
 nonebot-adapter-feishu = "*"
