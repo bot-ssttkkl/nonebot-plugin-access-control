@@ -4,7 +4,6 @@ from contextlib import asynccontextmanager
 from nonebot import logger
 from arclet.alconna import Arparma
 from arclet.alconna.typing import DataCollection
-from ssttkkl_nonebot_utils.errors.error_handler import ErrorHandlers
 from nonebot_plugin_access_control_api.errors import (
     PermissionDeniedError,
     AccessControlBadRequestError,
@@ -12,6 +11,7 @@ from nonebot_plugin_access_control_api.errors import (
 
 from ..alc import alc_ac
 from ..config import conf
+from .utils.errors import ErrorHandlers
 from . import (
     help_handler,
     limit_handler,
