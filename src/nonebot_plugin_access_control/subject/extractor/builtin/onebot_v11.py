@@ -16,7 +16,7 @@ def extract_onebot_v11_group_role(bot: Bot, event: Event, manager: SubjectManage
         return
 
     group_id = getattr(event, "group_id", None)
-    sender: Optional["Sender"] = getattr(event, "sender", None)
+    sender: Optional[Sender] = getattr(event, "sender", None)
 
     if group_id is not None and sender is not None:
         li = []
