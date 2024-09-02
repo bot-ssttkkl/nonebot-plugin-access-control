@@ -25,7 +25,7 @@ def extract_qqguild_role(bot: Bot, event: Event, manager: SubjectManager):
 
     guild_id: Optional[str] = getattr(event, "guild_id", None)
     channel_id: Optional[str] = getattr(event, "channel_id", None)
-    member: Optional["Member"] = getattr(event, "member", None)
+    member: Optional[Member] = getattr(event, "member", None)
 
     if member is not None:
         li = []
