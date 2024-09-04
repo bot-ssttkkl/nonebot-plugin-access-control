@@ -2,8 +2,11 @@ from typing import Literal, Optional
 
 from pydantic import Field
 from nonebot import get_driver
-from pydantic_settings import BaseSettings
 
+try:
+    from pydantic_settings import BaseSettings
+except ImportError:
+    from pydantic import BaseSettings
 
 class Config(BaseSettings):
     access_control_default_permission: Literal["allow", "deny"] = "allow"
