@@ -32,8 +32,6 @@ pre-commit = "^3.1.0"
 setuptools = "^68.1.2"
 nb-cli = "*"
 nonebot-plugin-orm = { extras = ["default"], version = "*" }
-# 为了兼容迁移
-nonebot-plugin-datastore = { version = ">=1.0.0", optional = true }
 
 nonebot2 = { extras = ["fastapi"], version = "*" }
 nonebot-adapter-onebot = "*"

@@ -33,4 +33,3 @@ __plugin_meta__ = PluginMetadata(
 from . import matcher  # noqa
 from . import service  # noqa
 from . import subject  # noqa
-from . import datastore  # noqa
