@@ -8,6 +8,7 @@ try:
 except ImportError:
     from pydantic import BaseSettings
 
+
 class Config(BaseSettings):
     access_control_default_permission: Literal["allow", "deny"] = "allow"
 
