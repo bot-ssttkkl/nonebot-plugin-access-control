@@ -6,7 +6,12 @@ from nonebot import get_driver
 try:
     from pydantic_settings import BaseSettings
 except ImportError:
-    from pydantic import BaseSettings
+    try:
+        from pydantic import BaseSettings
+    except ImportError as e:
+        raise ImportError(
+            "如果你正在使用pydantic v2，请手动安装pydantic-settings"
+        ) from e
 
 
 class Config(BaseSettings):

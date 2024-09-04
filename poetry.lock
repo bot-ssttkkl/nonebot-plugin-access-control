@@ -1790,7 +1790,7 @@ typing-extensions = ">=4.6.0,<4.7.0 || >4.7.0"
 name = "pydantic-settings"
 version = "2.4.0"
 description = "Settings management using Pydantic"
-optional = true
+optional = false
 python-versions = ">=3.8"
 files = [
     {file = "pydantic_settings-2.4.0-py3-none-any.whl", hash = "sha256:bb6849dc067f1687574c12a639e231f3a6feeed0a12d710c1382045c5db1c315"},
@@ -2898,4 +2898,4 @@ migrate = []
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "159059525df8114c5c3777836b8261337f82ad705329e23d6ed585fb6a9d55f5"
+content-hash = "7e18f2545f2bce7cb2ff5e24e49ef19b2ba3741c562410b74f3d24abc25be999"
