@@ -118,12 +118,12 @@ def _auto_patch():
 
     for plugin in get_loaded_plugins():
         if (
-            plugin.name == "nonebot_plugin_access_control"
-            or plugin.name in conf().access_control_auto_patch_ignore
+            plugin.id_ == "nonebot_plugin_access_control"
+            or plugin.id_ in conf().access_control_auto_patch_ignore
         ):
             continue
 
-        service = nonebot_service.get_or_create_plugin_service(plugin.name)
+        service = nonebot_service.get_or_create_plugin_service(plugin.id_)
         if service.auto_created:
             for matcher in plugin.matcher:
                 service.patch_matcher(matcher)
@@ -131,7 +131,7 @@ def _auto_patch():
 
     logger.opt(colors=True).success(
         "auto patched plugin(s): "
-        + ", ".join([f"<y>{p.name}</y>" for p in patched_plugins])
+        + ", ".join([f"<y>{p.id_}</y>" for p in patched_plugins])
     )
 
 
