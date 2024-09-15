@@ -14,7 +14,6 @@ import sqlalchemy as sa
 from sqlalchemy import inspect
 from alembic.op import run_async
 from nonebot import logger, require
-from pkg_resources import DistributionNotFound, get_distribution
 from sqlalchemy.ext.asyncio import AsyncSession, AsyncConnection
 
 revision: str = "96ced46e72e9"
@@ -139,8 +138,13 @@ def upgrade(name: str = "") -> None:
     if name:
         return
     try:
-        get_distribution("nonebot_plugin_datastore")
-    except DistributionNotFound:
+        from pkg_resources import DistributionNotFound, get_distribution
+
+        try:
+            get_distribution("nonebot_plugin_datastore")
+        except DistributionNotFound:
+            return
+    except ImportError:
         return
 
     logger.info("正在从 datastore 迁移数据……")
