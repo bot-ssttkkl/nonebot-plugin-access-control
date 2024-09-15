@@ -20,7 +20,7 @@ def extract_kaiheila_role(bot: Bot, event: Event, manager: SubjectManager):
 
     guild_id: Optional[str] = event.extra.guild_id
     getattr(event, "group_id", None) or getattr(event.extra.body, "channel_id", None)
-    author: Optional["User"] = event.extra.author
+    author: Optional[User] = event.extra.author
 
     if author is not None:
         li = []
