@@ -12,7 +12,7 @@ packages = [
 
 [tool.poetry.dependencies]
 python = "^3.9"
-nonebot2 = "^2.3.0"
+nonebot2 = ">=2.3.0, <3.0.0"
 nonebot-plugin-access-control-api = "^1.2.0"
 nonebot-plugin-apscheduler = ">=0.3.0"
 nonebot-plugin-session = "^0.3.0"
