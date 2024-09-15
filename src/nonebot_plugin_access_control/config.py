@@ -2,7 +2,16 @@ from typing import Literal, Optional
 
 from pydantic import Field
 from nonebot import get_driver
-from pydantic_settings import BaseSettings
+
+try:
+    from pydantic_settings import BaseSettings
+except ImportError:
+    try:
+        from pydantic import BaseSettings
+    except ImportError as e:
+        raise ImportError(
+            "如果你正在使用pydantic v2，请手动安装pydantic-settings"
+        ) from e
 
 
 class Config(BaseSettings):
