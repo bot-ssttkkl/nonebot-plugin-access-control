@@ -1,20 +1,10 @@
 from typing import Literal, Optional
 
-from pydantic import Field
-from nonebot import get_driver
-
-try:
-    from pydantic_settings import BaseSettings
-except ImportError:
-    try:
-        from pydantic import BaseSettings
-    except ImportError as e:
-        raise ImportError(
-            "如果你正在使用pydantic v2，请手动安装pydantic-settings"
-        ) from e
+from nonebot import get_plugin_config
+from pydantic import Field, BaseModel
 
 
-class Config(BaseSettings):
+class Config(BaseModel):
     access_control_default_permission: Literal["allow", "deny"] = "allow"
 
     access_control_rate_limit_token_storage: Literal["datastore", "inmemory"] = (
@@ -33,11 +23,5 @@ class Config(BaseSettings):
         extra = "ignore"
 
 
-_conf: Optional[Config] = None
-
-
 def conf() -> Config:
-    global _conf
-    if _conf is None:
-        _conf = Config(**get_driver().config.dict())
-    return _conf
+    return get_plugin_config(Config)
