@@ -67,7 +67,7 @@ class ErrorHandlers:
                         return
 
             if isinstance(e, (AccessControlBadRequestError, AccessControlQueryError)):
-                msg = e.message
+                msg = str(e)
 
                 matcher = None
                 try:
