@@ -8,7 +8,10 @@ nonebot-plugin-access-control
 
 from nonebot import require
 
-require("nonebot_plugin_access_control_api")
+from .utils.inspect import try_import_api
+
+try_import_api()
+
 require("nonebot_plugin_apscheduler")
 require("nonebot_plugin_session")
 require("nonebot_plugin_orm")
@@ -29,6 +32,7 @@ __plugin_meta__ = PluginMetadata(
     supported_adapters=inherit_supported_adapters("nonebot_plugin_session"),
     extra={"orm_version_location": orm_migrations},
 )
+
 
 from . import matcher  # noqa
 from . import service  # noqa

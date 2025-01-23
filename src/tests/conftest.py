@@ -22,8 +22,8 @@ def _prepare_nonebot():
     driver = nonebot.get_driver()
     driver.register_adapter(Adapter)
 
-    nonebot.require("nonebot_plugin_access_control")
     nonebot.require("nonebot_plugin_ac_demo")
+    nonebot.require("nonebot_plugin_access_control")
 
 
 _orm_inited = False
