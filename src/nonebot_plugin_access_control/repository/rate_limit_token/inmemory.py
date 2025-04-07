@@ -22,7 +22,7 @@ class StorageKey(NamedTuple):
 
 
 def _handle_expired(
-    tokens: tuple[RateLimitSingleToken, ...]
+    tokens: tuple[RateLimitSingleToken, ...],
 ) -> tuple[RateLimitSingleToken, ...]:
     now = datetime.utcnow()
     return tuple(filter(lambda x: x.expire_time > now, tokens))
