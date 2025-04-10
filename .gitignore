@@ -174,3 +174,5 @@ poetry.toml
 .env.dev
 .env.prod
 *.db
+
+.pdm-*

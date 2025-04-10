@@ -1,49 +1,51 @@
-[tool.poetry]
+[project]
 name = "nonebot-plugin-access-control"
 version = "1.2.4"
 description = ""
-authors = ["ssttkkl <huang.wen.long@hotmail.com>"]
-license = "MIT"
-readme = "README.MD"
-repository = "https://github.com/bot-ssttkkl/nonebot-plugin-access-control"
-packages = [
-    { include = "nonebot_plugin_access_control", from = "src" }
+authors = [
+    {name = "ssttkkl", email = "huang.wen.long@hotmail.com"},
 ]
+dependencies = [
+    "nonebot2<3.0.0,>=2.3.0",
+    "nonebot-plugin-access-control-api<2.0.0,>=1.2.1",
+    "nonebot-plugin-apscheduler>=0.3.0",
+    "nonebot-plugin-session<1.0.0,>=0.3.0",
+    "nonebot-plugin-orm<1.0.0,>=0.7.0",
+    "arclet-alconna<2.0.0,>=1.7.24",
+    "shortuuid<2.0.0,>=1.0.11",
+    "pytimeparser<1.0.0,>=0.2.0",
+]
+requires-python = "<4.0,>=3.9"
+readme = "README.MD"
+license = {text = "MIT"}
 
-[tool.poetry.dependencies]
-python = "^3.9"
-nonebot2 = ">=2.3.0, <3.0.0"
-nonebot-plugin-access-control-api = "^1.2.1"
-nonebot-plugin-apscheduler = ">=0.3.0"
-nonebot-plugin-session = "^0.3.0"
-nonebot-plugin-orm = ">=0.7.0, <1.0.0"
-arclet-alconna = "^1.7.24"
-shortuuid = "^1.0.11"
-pytimeparser = "^0.2.0"
+[project.urls]
+repository = "https://github.com/bot-ssttkkl/nonebot-plugin-access-control"
 
-[tool.poetry.group.dev.dependencies]
-ruff = "^0.0.275"
-isort = "^5.10.1"
-black = "^23.1.0"
-pre-commit = "^3.1.0"
+[project.entry-points.nb_scripts]
+accctrl = "nonebot_plugin_access_control.script:install"
 
-setuptools = "^68.1.2"
-nb-cli = "*"
-nonebot-plugin-orm = { extras = ["default"], version = "*" }
-
-nonebot2 = { extras = ["fastapi"], version = "*" }
-nonebot-adapter-onebot = "*"
-nonebot-adapter-kaiheila = "*"
-nonebot-adapter-qq = "*"
-nonebot-adapter-telegram = "*"
-nonebot-adapter-console = "*"
-nonebot-adapter-feishu = "*"
-
-nonebug = "^0.3.5"
-pytest = "^7.4.3"
-pytest-asyncio = "^0.21.1"
-pytest-cov = "^4.1.0"
-
+[dependency-groups]
+dev = [
+    "ruff<1.0.0,>=0.0.275",
+    "isort<6.0.0,>=5.10.1",
+    "black<24.0.0,>=23.1.0",
+    "pre-commit<4.0.0,>=3.1.0",
+    "setuptools<69.0.0,>=68.1.2",
+    "nb-cli",
+    "nonebot-plugin-orm[default]",
+    "nonebot2[fastapi]",
+    "nonebot-adapter-onebot",
+    "nonebot-adapter-kaiheila",
+    "nonebot-adapter-qq",
+    "nonebot-adapter-telegram",
+    "nonebot-adapter-console",
+    "nonebot-adapter-feishu",
+    "nonebug<1.0.0,>=0.3.5",
+    "pytest<8.0.0,>=7.4.3",
+    "pytest-asyncio<1.0.0,>=0.21.1",
+    "pytest-cov<5.0.0,>=4.1.0",
+]
 
 [tool.black]
 line-length = 88
@@ -71,17 +73,12 @@ target-version = "py39"
 fixture-parentheses = false
 mark-parentheses = false
 
-[tool.poetry.extras]
-cli = ["nb-cli"]
-migrate = ["nonebot-plugin-datastore"]
-
-[tool.poetry.plugins.nb_scripts]
-accctrl = "nonebot_plugin_access_control.script:install"
-
 [tool.nonebot]
 plugins = ["nonebot_plugin_access_control"]
 plugin_dirs = []
 
-[build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+[tool.pdm]
+distribution = false
+
+[tool.pdm.build]
+includes = ["src/nonebot_plugin_access_control"]
