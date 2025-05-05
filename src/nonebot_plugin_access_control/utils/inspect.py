@@ -1,7 +1,7 @@
 import inspect
 from typing import Optional
 
-from nonebot import get_loaded_plugins, get_plugin_by_module_name, logger, require
+from nonebot import require, get_loaded_plugins, get_plugin_by_module_name
 
 
 def get_caller_plugin_name() -> Optional[str]:
@@ -26,6 +26,7 @@ def get_caller_plugin_name() -> Optional[str]:
             return plugin.name
 
     return None  # pragma: no cover
+
 
 def try_import_api():
     if "nonebot_plugin_access_control_api" in get_loaded_plugins():
