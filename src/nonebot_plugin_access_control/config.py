@@ -1,7 +1,7 @@
 from typing import Literal, Optional
 
-from nonebot import get_plugin_config
 from pydantic import Field, BaseModel
+from nonebot import get_plugin_config
 
 
 class Config(BaseModel):
